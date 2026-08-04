@@ -41,7 +41,7 @@ export function CommandPalette() {
         </kbd>
       </button>
 
-      <CommandDialog open={open} onOpenChange={setOpen} title="Command palette">
+      <CommandDialog open={open} onOpenChange={setOpen}>
         <CommandInput placeholder="Jump to a module or run an action…" />
         <CommandList>
           <CommandEmpty>No results found.</CommandEmpty>
