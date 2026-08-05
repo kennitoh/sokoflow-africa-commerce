@@ -69,7 +69,7 @@ function SettingsPage() {
       <PageHeader
         title="Settings"
         description="Your business profile, appearance and workspace preferences."
-        breadcrumbs={[{ label: "SokoFlow", to: "/dashboard" }, { label: "Settings" }]}
+        breadcrumbs={[{ label: "SokoFlow", to: "/home" }, { label: "Settings" }]}
       />
 
       <div className="grid gap-4 lg:grid-cols-3">

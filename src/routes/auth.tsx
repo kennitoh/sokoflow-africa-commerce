@@ -78,7 +78,7 @@ function AuthPage() {
     try {
       await authService.signIn(parsed.data);
       toast.success("Welcome back to SokoFlow");
-      navigate({ to: "/dashboard", replace: true });
+      navigate({ to: "/home", replace: true });
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Could not sign in");
     } finally {
@@ -104,7 +104,7 @@ function AuthPage() {
     try {
       const result = await authService.signUp(parsed.data);
       if (result.session) {
-        navigate({ to: "/dashboard", replace: true });
+        navigate({ to: "/home", replace: true });
         return;
       }
       navigate({ to: "/verify-email", search: { email: parsed.data.email } });

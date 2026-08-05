@@ -52,7 +52,7 @@ function ResetPassword() {
     try {
       await authService.updatePassword(parsed.data.password);
       toast.success("Password updated");
-      navigate({ to: "/dashboard", replace: true });
+      navigate({ to: "/home", replace: true });
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Could not update password");
     } finally {

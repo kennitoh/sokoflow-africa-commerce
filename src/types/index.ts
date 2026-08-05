@@ -9,8 +9,6 @@ export type NavItem = {
 
 export type StatusTone = "neutral" | "success" | "warning" | "danger" | "info";
 
-export type OrderStatusKey = "paid" | "pending" | "fulfilled" | "refunded" | "cancelled";
-
 export type Profile = {
   id: string;
   full_name: string | null;
@@ -18,4 +16,132 @@ export type Profile = {
   phone: string | null;
   avatar_url: string | null;
   currency: string;
+};
+
+export type OrderStatus =
+  | "pending"
+  | "confirmed"
+  | "packed"
+  | "out_for_delivery"
+  | "delivered"
+  | "cancelled";
+
+export type PaymentStatus = "unpaid" | "partial" | "paid" | "refunded";
+
+export type SalesChannel =
+  | "whatsapp"
+  | "instagram"
+  | "facebook"
+  | "tiktok"
+  | "walk_in"
+  | "website"
+  | "marketplace"
+  | "api";
+
+export type ProductStatus = "active" | "draft" | "archived";
+
+export type Customer = {
+  id: string;
+  name: string;
+  phone: string | null;
+  whatsapp: string | null;
+  instagram: string | null;
+  email: string | null;
+  address: string | null;
+  city: string | null;
+  notes: string | null;
+  avatar_url: string | null;
+  created_at: string;
+};
+
+export type Product = {
+  id: string;
+  name: string;
+  sku: string | null;
+  category: string | null;
+  description: string | null;
+  price: number;
+  cost: number | null;
+  stock: number;
+  low_stock_threshold: number;
+  image_url: string | null;
+  status: ProductStatus;
+  published_to_web: boolean;
+  created_at: string;
+};
+
+export type ProductVariant = {
+  id: string;
+  product_id: string;
+  name: string;
+  value: string | null;
+  sku: string | null;
+  price: number | null;
+  stock: number;
+};
+
+export type OrderItem = {
+  id: string;
+  order_id: string;
+  product_id: string | null;
+  variant_id: string | null;
+  product_name: string;
+  variant_name: string | null;
+  unit_price: number;
+  quantity: number;
+  total: number;
+};
+
+export type Order = {
+  id: string;
+  order_number: string;
+  customer_id: string | null;
+  customer_name: string | null;
+  status: OrderStatus;
+  payment_status: PaymentStatus;
+  channel: SalesChannel;
+  subtotal: number;
+  discount: number;
+  delivery_fee: number;
+  total: number;
+  amount_paid: number;
+  delivery_address: string | null;
+  delivery_date: string | null;
+  notes: string | null;
+  created_at: string;
+};
+
+export type OrderWithItems = Order & { items: OrderItem[] };
+
+export type ActivityEntry = {
+  id: string;
+  entity_type: string;
+  entity_id: string | null;
+  action: string;
+  message: string;
+  created_at: string;
+};
+
+export type NewOrderLine = {
+  product_id: string | null;
+  variant_id: string | null;
+  product_name: string;
+  variant_name: string | null;
+  unit_price: number;
+  quantity: number;
+};
+
+export type NewOrderInput = {
+  customer_id: string | null;
+  customer_name: string;
+  channel: SalesChannel;
+  status: OrderStatus;
+  payment_status: PaymentStatus;
+  discount: number;
+  delivery_fee: number;
+  amount_paid: number;
+  delivery_address: string | null;
+  delivery_date: string | null;
+  notes: string | null;
+  lines: NewOrderLine[];
 };
