@@ -49,12 +49,12 @@ function Landing() {
           <div className="ml-auto flex shrink-0 items-center gap-2">
             <ThemeToggle />
             <Button asChild variant="ghost" className="hidden sm:inline-flex">
-              <Link to={isAuthenticated ? "/dashboard" : "/auth"}>
+              <Link to={isAuthenticated ? "/home" : "/auth"}>
                 {isAuthenticated ? "Open workspace" : "Sign in"}
               </Link>
             </Button>
             <Button asChild>
-              <Link to={isAuthenticated ? "/dashboard" : "/auth"}>
+              <Link to={isAuthenticated ? "/home" : "/auth"}>
                 {isAuthenticated ? "Dashboard" : "Get started"}
               </Link>
             </Button>
@@ -77,7 +77,7 @@ function Landing() {
             </p>
             <div className="flex flex-wrap gap-3">
               <Button asChild size="lg">
-                <Link to={isAuthenticated ? "/dashboard" : "/auth"}>
+                <Link to={isAuthenticated ? "/home" : "/auth"}>
                   {isAuthenticated ? "Go to dashboard" : "Create your workspace"}
                   <ArrowRight className="size-4" />
                 </Link>
