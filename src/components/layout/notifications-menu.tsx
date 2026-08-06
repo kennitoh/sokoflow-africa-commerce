@@ -172,7 +172,7 @@ export function NotificationsMenu() {
         tone: "success",
         icon: CheckCircle2,
         title: `Order #${order.order_number} delivered`,
-        description: order.customer_name,
+        description: order.customer_name ?? "Walk-in customer",
         time: timeAgo(order.created_at),
         timestamp: new Date(order.created_at).getTime(),
         to: "/orders",
