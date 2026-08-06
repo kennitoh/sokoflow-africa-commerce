@@ -1,12 +1,14 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Instagram, Loader2, Phone, Plus, Search, Users } from "lucide-react";
+import { Instagram, Phone, Plus, Search, Users } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import { EmptyState } from "@/components/common/empty-state";
+import { ErrorState } from "@/components/common/error-state";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
 import { CustomerFormSheet } from "@/features/customers/customer-form-sheet";
 import { useWorkspace } from "@/hooks/use-workspace";
 import { formatMoney, initials } from "@/lib/format";
@@ -64,7 +66,7 @@ function CustomersPage() {
   }, [customers, query]);
 
   return (
-    <>
+    <div className="animate-page-in space-y-6">
       <header className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-4 sm:flex sm:items-center sm:justify-between">
         <div className="min-w-0">
           <h1 className="truncate text-2xl font-bold sm:text-3xl">Customers</h1>
@@ -72,7 +74,7 @@ function CustomersPage() {
             {customers.length} saved · tap a customer to see their full history.
           </p>
         </div>
-        <Button onClick={() => setFormOpen(true)} className="shrink-0 rounded-xl">
+        <Button onClick={() => setFormOpen(true)} className="h-11 shrink-0 rounded-xl">
           <Plus className="size-4" /> Add customer
         </Button>
       </header>
@@ -88,14 +90,18 @@ function CustomersPage() {
         />
       </div>
 
-      {customersQuery.isLoading ? (
-        <div className="grid place-items-center py-16">
-          <Loader2 className="size-5 animate-spin text-muted-foreground" />
+      {customersQuery.isError ? (
+        <ErrorState error={customersQuery.error} onRetry={() => customersQuery.refetch()} />
+      ) : customersQuery.isLoading ? (
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          {Array.from({ length: 6 }).map((_, index) => (
+            <Skeleton key={index} className="h-36 w-full rounded-xl" />
+          ))}
         </div>
       ) : filtered.length === 0 ? (
         <EmptyState
           icon={Users}
-          title={customers.length === 0 ? "No customers saved yet" : "No customer matches that search"}
+          title={customers.length === 0 ? "Start building your customer list." : "No customer matches that search"}
           description={
             customers.length === 0
               ? "Save your regulars with their phone, WhatsApp and Instagram handle. Next time they order you'll find them in one search instead of scrolling through chats."
@@ -114,10 +120,10 @@ function CustomersPage() {
             return (
               <li key={customer.id}>
                 <Link to="/customers/$customerId" params={{ customerId: customer.id }}>
-                  <Card className="h-full shadow-soft transition-shadow hover:shadow-card">
+                  <Card className="card-interactive h-full shadow-soft">
                     <CardContent className="space-y-3 p-4">
                       <div className="flex items-center gap-3">
-                        <span className="grid size-11 shrink-0 place-items-center rounded-full bg-primary-soft text-sm font-semibold text-primary">
+                        <span className="grid size-11 shrink-0 place-items-center rounded-full bg-gradient-to-br from-primary to-primary/60 text-sm font-semibold text-primary-foreground">
                           {initials(customer.name)}
                         </span>
                         <div className="min-w-0">
@@ -155,6 +161,6 @@ function CustomersPage() {
       )}
 
       <CustomerFormSheet open={formOpen} customer={null} onOpenChange={setFormOpen} />
-    </>
+    </div>
   );
 }
