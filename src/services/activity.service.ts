@@ -17,6 +17,17 @@ export const activityService = {
     if (error) console.error(error);
   },
 
+  async forEntity(entityId: string, limit = 20): Promise<ActivityEntry[]> {
+    const { data, error } = await supabase
+      .from("activity_log")
+      .select("id, entity_type, entity_id, action, message, created_at")
+      .eq("entity_id", entityId)
+      .order("created_at", { ascending: false })
+      .limit(limit);
+    if (error) throw error;
+    return (data ?? []) as ActivityEntry[];
+  },
+
   async recent(limit = 8): Promise<ActivityEntry[]> {
     const { data, error } = await supabase
       .from("activity_log")

@@ -9,13 +9,37 @@ export type NavItem = {
 
 export type StatusTone = "neutral" | "success" | "warning" | "danger" | "info";
 
+export type SalesChannelKey = "instagram" | "whatsapp" | "facebook" | "tiktok" | "physical_store";
+
 export type Profile = {
   id: string;
   full_name: string | null;
   business_name: string | null;
+  business_type: string | null;
   phone: string | null;
+  whatsapp: string | null;
+  email: string | null;
   avatar_url: string | null;
+  logo_url: string | null;
+  country: string | null;
+  address: string | null;
+  city: string | null;
+  timezone: string;
+  description: string | null;
+  instagram_url: string | null;
+  facebook_url: string | null;
+  tiktok_url: string | null;
+  sales_channels: string[];
+  onboarding_completed: boolean;
   currency: string;
+};
+
+export type Store = {
+  id: string;
+  name: string;
+  slug: string | null;
+  is_published: boolean;
+  settings: Record<string, unknown>;
 };
 
 export type OrderStatus =

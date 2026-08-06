@@ -1,6 +1,8 @@
-import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
+import { createFileRoute, Outlet, redirect, useRouterState } from "@tanstack/react-router";
+import { Navigate } from "@tanstack/react-router";
 
 import { AppShell } from "@/components/layout/app-shell";
+import { useWorkspace } from "@/hooks/use-workspace";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/_authenticated")({
@@ -14,6 +16,13 @@ export const Route = createFileRoute("/_authenticated")({
 });
 
 function AuthenticatedLayout() {
+  const pathname = useRouterState({ select: (router) => router.location.pathname });
+  const { needsOnboarding } = useWorkspace();
+  const onOnboarding = pathname.startsWith("/onboarding");
+
+  if (onOnboarding) return <Outlet />;
+  if (needsOnboarding) return <Navigate to="/onboarding" replace />;
+
   return (
     <AppShell>
       <Outlet />

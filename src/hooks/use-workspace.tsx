@@ -21,9 +21,12 @@ export function useWorkspace() {
 
   return {
     profile,
+    userId,
     isLoading: profileQuery.isLoading,
     currency: profile?.currency ?? "KES",
     ownerName: profile?.full_name || fallbackName,
     businessName: profile?.business_name || "Your business",
+    logoUrl: profile?.logo_url ?? null,
+    needsOnboarding: Boolean(userId) && !profileQuery.isLoading && !profile?.onboarding_completed,
   };
 }
