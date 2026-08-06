@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { LineChart as LineChartIcon, Loader2 } from "lucide-react";
+import { LineChart as LineChartIcon, Plus } from "lucide-react";
 import { useMemo } from "react";
+import { Button } from "@/components/ui/button";
 import {
   Bar,
   BarChart,
@@ -15,7 +16,10 @@ import {
 } from "recharts";
 
 import { EmptyState } from "@/components/common/empty-state";
+import { ErrorState } from "@/components/common/error-state";
 import { Card, CardContent } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useNewOrder } from "@/features/orders/new-order-context";
 import { useWorkspace } from "@/hooks/use-workspace";
 import { formatCompactMoney, formatMoney } from "@/lib/format";
 import { customerService } from "@/services/customer.service";
@@ -40,6 +44,7 @@ export const Route = createFileRoute("/_authenticated/insights")({
 
 function InsightsPage() {
   const { currency } = useWorkspace();
+  const { openNewOrder } = useNewOrder();
 
   const ordersQuery = useQuery({ queryKey: ["orders"], queryFn: orderService.list });
   const productsQuery = useQuery({ queryKey: ["products"], queryFn: productService.list });
@@ -103,16 +108,30 @@ function InsightsPage() {
     (product) => product.stock <= product.low_stock_threshold,
   );
 
+  if (ordersQuery.isError) {
+    return (
+      <div className="animate-page-in">
+        <ErrorState error={ordersQuery.error} onRetry={() => ordersQuery.refetch()} />
+      </div>
+    );
+  }
+
   if (ordersQuery.isLoading) {
     return (
-      <div className="grid place-items-center py-20">
-        <Loader2 className="size-5 animate-spin text-muted-foreground" />
+      <div className="animate-page-in space-y-6">
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          {Array.from({ length: 4 }).map((_, index) => (
+            <Skeleton key={index} className="h-24 w-full rounded-xl" />
+          ))}
+        </div>
+        <Skeleton className="h-64 w-full rounded-xl" />
+        <Skeleton className="h-56 w-full rounded-xl" />
       </div>
     );
   }
 
   return (
-    <>
+    <div className="animate-page-in space-y-6">
       <header className="space-y-1">
         <h1 className="text-2xl font-bold sm:text-3xl">Insights</h1>
         <p className="text-sm text-muted-foreground">
@@ -123,8 +142,13 @@ function InsightsPage() {
       {orders.length === 0 ? (
         <EmptyState
           icon={LineChartIcon}
-          title="No numbers to show yet"
+          title="Analytics will appear once you start selling."
           description="Insights fill in automatically once you start recording orders. Take a few sales in Orders and come back to see revenue, best sellers and your top customers."
+          action={
+            <Button size="sm" onClick={openNewOrder}>
+              <Plus className="size-4" /> New order
+            </Button>
+          }
         />
       ) : (
         <>
@@ -271,7 +295,7 @@ function InsightsPage() {
           </Card>
         </>
       )}
-    </>
+    </div>
   );
 }
 
