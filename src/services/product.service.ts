@@ -72,6 +72,22 @@ export const productService = {
     const { error } = await supabase.from("products").delete().eq("id", id);
     if (error) throw error;
   },
+
+  async duplicate(product: Product): Promise<Product> {
+    const input: ProductInput = {
+      name: `${product.name} (copy)`,
+      sku: product.sku ?? null,
+      category: product.category ?? null,
+      description: product.description ?? null,
+      price: Number(product.price) || 0,
+      cost: product.cost ?? null,
+      stock: product.stock ?? 0,
+      low_stock_threshold: product.low_stock_threshold ?? 5,
+      image_url: product.image_url ?? null,
+      status: product.status,
+    };
+    return productService.create(input);
+  },
 };
 
 export function isLowStock(product: Product) {

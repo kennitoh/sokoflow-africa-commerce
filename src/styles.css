@@ -191,3 +191,70 @@
   background-clip: text;
   color: transparent;
 }
+
+/* Motion + polish primitives. All respect prefers-reduced-motion. */
+@keyframes sf-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes sf-pop {
+  0% {
+    transform: scale(0.85);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.06);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@utility animate-page-in {
+  animation: sf-fade-up 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@utility animate-pop-in {
+  animation: sf-pop 0.36s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@utility card-interactive {
+  transition:
+    box-shadow 0.2s ease,
+    transform 0.2s ease,
+    border-color 0.2s ease;
+  &:hover {
+    box-shadow: var(--shadow-card);
+    transform: translateY(-2px);
+  }
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+@layer base {
+  :focus-visible {
+    outline: 2px solid var(--color-ring);
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.001ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.001ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}

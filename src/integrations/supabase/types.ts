@@ -354,34 +354,76 @@ export type Database = {
       }
       profiles: {
         Row: {
+          address: string | null
           avatar_url: string | null
           business_name: string | null
+          business_type: string | null
+          city: string | null
+          country: string | null
           created_at: string
           currency: string
+          description: string | null
+          email: string | null
+          facebook_url: string | null
           full_name: string | null
           id: string
+          instagram_url: string | null
+          logo_url: string | null
+          onboarding_completed: boolean
           phone: string | null
+          sales_channels: string[]
+          tiktok_url: string | null
+          timezone: string
           updated_at: string
+          whatsapp: string | null
         }
         Insert: {
+          address?: string | null
           avatar_url?: string | null
           business_name?: string | null
+          business_type?: string | null
+          city?: string | null
+          country?: string | null
           created_at?: string
           currency?: string
+          description?: string | null
+          email?: string | null
+          facebook_url?: string | null
           full_name?: string | null
           id: string
+          instagram_url?: string | null
+          logo_url?: string | null
+          onboarding_completed?: boolean
           phone?: string | null
+          sales_channels?: string[]
+          tiktok_url?: string | null
+          timezone?: string
           updated_at?: string
+          whatsapp?: string | null
         }
         Update: {
+          address?: string | null
           avatar_url?: string | null
           business_name?: string | null
+          business_type?: string | null
+          city?: string | null
+          country?: string | null
           created_at?: string
           currency?: string
+          description?: string | null
+          email?: string | null
+          facebook_url?: string | null
           full_name?: string | null
           id?: string
+          instagram_url?: string | null
+          logo_url?: string | null
+          onboarding_completed?: boolean
           phone?: string | null
+          sales_channels?: string[]
+          tiktok_url?: string | null
+          timezone?: string
           updated_at?: string
+          whatsapp?: string | null
         }
         Relationships: []
       }

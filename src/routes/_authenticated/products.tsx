@@ -1,14 +1,53 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { LayoutGrid, List, Loader2, Minus, Package, Plus, Search } from "lucide-react";
+import {
+  AlertTriangle,
+  Copy,
+  LayoutGrid,
+  List,
+  MoreVertical,
+  Minus,
+  Package,
+  Pencil,
+  Plus,
+  Search,
+  Trash2,
+} from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { EmptyState } from "@/components/common/empty-state";
+import { ErrorState } from "@/components/common/error-state";
+import { SmartImage } from "@/components/common/smart-image";
 import { StatusPill } from "@/components/common/status-pill";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
   TableBody,
@@ -42,6 +81,14 @@ export const Route = createFileRoute("/_authenticated/products")({
 
 type View = "grid" | "table";
 type Filter = "all" | "active" | "low" | "draft";
+type SortKey = "newest" | "name" | "price-desc" | "stock-asc";
+
+const sortOptions: { key: SortKey; label: string }[] = [
+  { key: "newest", label: "Newest" },
+  { key: "name", label: "Name A–Z" },
+  { key: "price-desc", label: "Price high→low" },
+  { key: "stock-asc", label: "Stock low→high" },
+];
 
 function ProductsPage() {
   const { currency } = useWorkspace();
@@ -49,17 +96,19 @@ function ProductsPage() {
 
   const [view, setView] = useState<View>("grid");
   const [filter, setFilter] = useState<Filter>("all");
+  const [sort, setSort] = useState<SortKey>("newest");
   const [query, setQuery] = useState("");
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<Product | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Product | null>(null);
 
   const productsQuery = useQuery({ queryKey: ["products"], queryFn: productService.list });
   const products = productsQuery.data ?? [];
 
   const filtered = useMemo(() => {
     const needle = query.trim().toLowerCase();
-    return products.filter((product) => {
+    const list = products.filter((product) => {
       if (filter === "active" && product.status !== "active") return false;
       if (filter === "draft" && product.status !== "draft") return false;
       if (filter === "low" && !isLowStock(product)) return false;
@@ -68,7 +117,24 @@ function ProductsPage() {
         .filter(Boolean)
         .some((field) => field!.toLowerCase().includes(needle));
     });
-  }, [products, filter, query]);
+    const sorted = [...list];
+    switch (sort) {
+      case "name":
+        sorted.sort((a, b) => a.name.localeCompare(b.name));
+        break;
+      case "price-desc":
+        sorted.sort((a, b) => Number(b.price) - Number(a.price));
+        break;
+      case "stock-asc":
+        sorted.sort((a, b) => a.stock - b.stock);
+        break;
+      default:
+        sorted.sort(
+          (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+        );
+    }
+    return sorted;
+  }, [products, filter, query, sort]);
 
   async function adjust(product: Product, change: number) {
     setBusyId(product.id);
@@ -82,8 +148,55 @@ function ProductsPage() {
     }
   }
 
+  async function duplicate(product: Product) {
+    setBusyId(product.id);
+    try {
+      await productService.duplicate(product);
+      queryClient.invalidateQueries({ queryKey: ["products"] });
+      toast.success("Product duplicated");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not duplicate this product");
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function toggleArchive(product: Product) {
+    setBusyId(product.id);
+    const nextStatus = product.status === "archived" ? "active" : "archived";
+    try {
+      await productService.update(product.id, { status: nextStatus });
+      queryClient.invalidateQueries({ queryKey: ["products"] });
+      toast.success(nextStatus === "archived" ? "Product archived" : "Product restored");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not update this product");
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function confirmDelete() {
+    if (!deleteTarget) return;
+    setBusyId(deleteTarget.id);
+    try {
+      await productService.remove(deleteTarget.id);
+      queryClient.invalidateQueries({ queryKey: ["products"] });
+      toast.success("Product deleted");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not delete this product");
+    } finally {
+      setBusyId(null);
+      setDeleteTarget(null);
+    }
+  }
+
   function openNew() {
     setEditing(null);
+    setFormOpen(true);
+  }
+
+  function openEdit(product: Product) {
+    setEditing(product);
     setFormOpen(true);
   }
 
@@ -108,7 +221,7 @@ function ProductsPage() {
         </Button>
       </header>
 
-      <div className="space-y-4">
+      <div className="animate-page-in space-y-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
           <div className="relative flex-1">
             <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
@@ -120,6 +233,18 @@ function ProductsPage() {
               className="h-11 rounded-xl pl-9"
             />
           </div>
+          <Select value={sort} onValueChange={(value) => setSort(value as SortKey)}>
+            <SelectTrigger className="h-11 w-full rounded-xl sm:w-48" aria-label="Sort products">
+              <SelectValue placeholder="Sort by" />
+            </SelectTrigger>
+            <SelectContent>
+              {sortOptions.map((option) => (
+                <SelectItem key={option.key} value={option.key}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <div className="hidden shrink-0 items-center gap-1 rounded-xl border border-border p-1 sm:flex">
             <Button
               size="icon"
@@ -161,16 +286,37 @@ function ProductsPage() {
         </div>
 
         {productsQuery.isLoading ? (
-          <div className="grid place-items-center py-16">
-            <Loader2 className="size-5 animate-spin text-muted-foreground" />
-          </div>
+          view === "table" ? (
+            <Card className="hidden overflow-hidden sm:block">
+              <CardContent className="p-4">
+                <TableSkeleton />
+              </CardContent>
+            </Card>
+          ) : (
+            <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3" aria-hidden>
+              {Array.from({ length: 6 }).map((_, index) => (
+                <li key={index}>
+                  <Card className="overflow-hidden">
+                    <Skeleton className="aspect-[4/3] w-full rounded-none" />
+                    <CardContent className="space-y-3 p-4">
+                      <Skeleton className="h-4 w-2/3" />
+                      <Skeleton className="h-4 w-1/3" />
+                      <Skeleton className="h-9 w-full rounded-lg" />
+                    </CardContent>
+                  </Card>
+                </li>
+              ))}
+            </ul>
+          )
+        ) : productsQuery.isError ? (
+          <ErrorState error={productsQuery.error} onRetry={() => productsQuery.refetch()} />
         ) : filtered.length === 0 ? (
           <EmptyState
             icon={Package}
-            title={products.length === 0 ? "Your catalogue is empty" : "Nothing matches this view"}
+            title={products.length === 0 ? "Let's add your first product." : "Nothing matches this view"}
             description={
               products.length === 0
-                ? "Add the items you sell with a price and a stock count. SokoFlow then keeps stock in step with every order and warns you before you run out."
+                ? "Products power fast order entry and low-stock alerts. Add an item with a price and a stock count, and SokoFlow keeps everything in step automatically."
                 : "Try a different search, or switch back to All products."
             }
             action={
@@ -196,33 +342,48 @@ function ProductsPage() {
                     <TableHead className="text-xs uppercase">Status</TableHead>
                     <TableHead className="text-right text-xs uppercase">Stock</TableHead>
                     <TableHead className="text-right text-xs uppercase">Price</TableHead>
-                    <TableHead className="text-right text-xs uppercase">Edit</TableHead>
+                    <TableHead className="text-right text-xs uppercase">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filtered.map((product) => (
                     <TableRow key={product.id}>
                       <TableCell className="text-sm font-medium">
-                        {product.name}
-                        {product.sku && (
-                          <span className="block text-xs text-muted-foreground">{product.sku}</span>
-                        )}
+                        <div className="flex items-center gap-3">
+                          <div className="size-10 shrink-0 overflow-hidden rounded-lg bg-muted">
+                            <SmartImage
+                              bucket="product-images"
+                              value={product.image_url}
+                              alt={product.name}
+                              fallbackIcon={Package}
+                            />
+                          </div>
+                          <div className="min-w-0">
+                            <p className="truncate">{product.name}</p>
+                            {product.sku && (
+                              <span className="block text-xs text-muted-foreground">{product.sku}</span>
+                            )}
+                          </div>
+                        </div>
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground">
                         {product.category ?? "—"}
                       </TableCell>
                       <TableCell>
-                        <StatusPill
-                          tone={
-                            product.status === "active"
-                              ? "success"
-                              : product.status === "draft"
-                                ? "neutral"
-                                : "danger"
-                          }
-                        >
-                          <span className="capitalize">{product.status}</span>
-                        </StatusPill>
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <StatusPill
+                            tone={
+                              product.status === "active"
+                                ? "success"
+                                : product.status === "draft"
+                                  ? "neutral"
+                                  : "danger"
+                            }
+                          >
+                            <span className="capitalize">{product.status}</span>
+                          </StatusPill>
+                          <StockBadge product={product} />
+                        </div>
                       </TableCell>
                       <TableCell className="text-right text-sm">
                         <span className={cn(isLowStock(product) && "font-semibold text-destructive")}>
@@ -233,17 +394,14 @@ function ProductsPage() {
                         {formatMoney(Number(product.price), currency)}
                       </TableCell>
                       <TableCell className="text-right">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="rounded-full"
-                          onClick={() => {
-                            setEditing(product);
-                            setFormOpen(true);
-                          }}
-                        >
-                          Quick edit
-                        </Button>
+                        <ProductActionsMenu
+                          product={product}
+                          disabled={busyId === product.id}
+                          onEdit={() => openEdit(product)}
+                          onDuplicate={() => duplicate(product)}
+                          onToggleArchive={() => toggleArchive(product)}
+                          onDelete={() => setDeleteTarget(product)}
+                        />
                       </TableCell>
                     </TableRow>
                   ))}
@@ -256,19 +414,24 @@ function ProductsPage() {
             {filtered.map((product) => (
               <li key={product.id}>
                 <Card className="h-full overflow-hidden shadow-soft transition-shadow hover:shadow-card">
-                  <div className="aspect-[4/3] w-full bg-muted">
-                    {product.image_url ? (
-                      <img
-                        src={product.image_url}
-                        alt={product.name}
-                        loading="lazy"
-                        className="size-full object-cover"
+                  <div className="relative aspect-[4/3] w-full bg-muted">
+                    <SmartImage
+                      bucket="product-images"
+                      value={product.image_url}
+                      alt={product.name}
+                      fallbackIcon={Package}
+                    />
+                    <div className="absolute top-2 right-2">
+                      <ProductActionsMenu
+                        product={product}
+                        disabled={busyId === product.id}
+                        onEdit={() => openEdit(product)}
+                        onDuplicate={() => duplicate(product)}
+                        onToggleArchive={() => toggleArchive(product)}
+                        onDelete={() => setDeleteTarget(product)}
+                        surface
                       />
-                    ) : (
-                      <div className="grid size-full place-items-center text-muted-foreground">
-                        <Package className="size-7" />
-                      </div>
-                    )}
+                    </div>
                   </div>
                   <CardContent className="space-y-3 p-4">
                     <div className="flex items-start justify-between gap-3">
@@ -282,15 +445,18 @@ function ProductsPage() {
                         {formatMoney(Number(product.price), currency)}
                       </p>
                     </div>
-                    <div className="flex items-center justify-between gap-2">
-                      <StatusPill tone={isLowStock(product) ? "warning" : "success"}>
-                        {product.stock} in stock
-                      </StatusPill>
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <StatusPill tone={isLowStock(product) ? "warning" : "success"}>
+                          {product.stock} in stock
+                        </StatusPill>
+                        <StockBadge product={product} />
+                      </div>
                       <div className="flex items-center gap-1">
                         <Button
                           size="icon"
                           variant="outline"
-                          className="size-8 rounded-lg"
+                          className="size-10 rounded-lg sm:size-8"
                           aria-label={`Reduce stock of ${product.name}`}
                           disabled={busyId === product.id}
                           onClick={() => adjust(product, -1)}
@@ -300,7 +466,7 @@ function ProductsPage() {
                         <Button
                           size="icon"
                           variant="outline"
-                          className="size-8 rounded-lg"
+                          className="size-10 rounded-lg sm:size-8"
                           aria-label={`Add stock to ${product.name}`}
                           disabled={busyId === product.id}
                           onClick={() => adjust(product, 1)}
@@ -313,10 +479,7 @@ function ProductsPage() {
                       variant="outline"
                       size="sm"
                       className="w-full rounded-lg"
-                      onClick={() => {
-                        setEditing(product);
-                        setFormOpen(true);
-                      }}
+                      onClick={() => openEdit(product)}
                     >
                       Quick edit
                     </Button>
@@ -329,6 +492,108 @@ function ProductsPage() {
       </div>
 
       <ProductFormSheet open={formOpen} product={editing} onOpenChange={setFormOpen} />
+
+      <AlertDialog open={Boolean(deleteTarget)} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete {deleteTarget?.name}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This permanently removes the product from your catalogue. This can't be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={confirmDelete}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
+  );
+}
+
+function StockBadge({ product }: { product: Product }) {
+  if (product.stock === 0) {
+    return <StatusPill tone="danger">Out of stock</StatusPill>;
+  }
+  if (isLowStock(product)) {
+    return (
+      <StatusPill tone="warning">
+        <AlertTriangle className="size-3" aria-hidden /> Low stock
+      </StatusPill>
+    );
+  }
+  return null;
+}
+
+function ProductActionsMenu({
+  product,
+  disabled,
+  onEdit,
+  onDuplicate,
+  onToggleArchive,
+  onDelete,
+  surface = false,
+}: {
+  product: Product;
+  disabled: boolean;
+  onEdit: () => void;
+  onDuplicate: () => void;
+  onToggleArchive: () => void;
+  onDelete: () => void;
+  surface?: boolean;
+}) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          size="icon"
+          variant={surface ? "secondary" : "outline"}
+          className="size-10 rounded-lg sm:size-8"
+          aria-label={`More actions for ${product.name}`}
+          disabled={disabled}
+        >
+          <MoreVertical className="size-4" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuItem onClick={onEdit}>
+          <Pencil className="size-3.5" /> Quick edit
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={onDuplicate}>
+          <Copy className="size-3.5" /> Duplicate
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={onToggleArchive}>
+          <Package className="size-3.5" /> {product.status === "archived" ? "Restore" : "Archive"}
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+          onClick={onDelete}
+          className="text-destructive focus:text-destructive"
+        >
+          <Trash2 className="size-3.5" /> Delete
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+function TableSkeleton() {
+  return (
+    <div className="space-y-3" aria-hidden>
+      {Array.from({ length: 5 }).map((_, index) => (
+        <div key={index} className="flex items-center gap-3">
+          <Skeleton className="size-10 shrink-0 rounded-lg" />
+          <Skeleton className="h-4 w-1/4" />
+          <Skeleton className="h-4 w-1/6" />
+          <Skeleton className="h-4 w-1/6" />
+          <Skeleton className="h-4 flex-1" />
+        </div>
+      ))}
+    </div>
   );
 }

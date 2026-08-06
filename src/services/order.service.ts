@@ -148,6 +148,17 @@ export const orderService = {
     });
   },
 
+  async updateNotes(id: string, notes: string) {
+    const { error } = await supabase.from("orders").update({ notes }).eq("id", id);
+    if (error) throw error;
+    await activityService.log({
+      entity_type: "order",
+      entity_id: id,
+      action: "notes_updated",
+      message: "Internal notes updated",
+    });
+  },
+
   async remove(ids: string[]) {
     const { error } = await supabase.from("orders").delete().in("id", ids);
     if (error) throw error;

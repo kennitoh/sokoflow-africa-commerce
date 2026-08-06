@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
+import { ImageUpload } from "@/components/common/image-upload";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -30,6 +31,7 @@ export function ProductFormSheet({ open, product, onOpenChange }: ProductFormShe
   const queryClient = useQueryClient();
   const [values, setValues] = useState(() => emptyValues());
   const [status, setStatus] = useState<ProductStatus>("active");
+  const [touched, setTouched] = useState(false);
 
   useEffect(() => {
     if (!open) return;
@@ -49,7 +51,13 @@ export function ProductFormSheet({ open, product, onOpenChange }: ProductFormShe
       setValues(emptyValues());
       setStatus("active");
     }
+    setTouched(false);
   }, [open, product]);
+
+  const nameError = touched && !values.name.trim() ? "Product name is required" : null;
+  const price = Number(values.price);
+  const priceError = touched && (Number.isNaN(price) || price < 0) ? "Price must be 0 or more" : null;
+  const isValid = values.name.trim().length > 0 && !Number.isNaN(price) && price >= 0;
 
   const save = useMutation({
     mutationFn: async () => {
@@ -75,6 +83,12 @@ export function ProductFormSheet({ open, product, onOpenChange }: ProductFormShe
       toast.error(error instanceof Error ? error.message : "Could not save this product"),
   });
 
+  function handleSave() {
+    setTouched(true);
+    if (!isValid) return;
+    save.mutate();
+  }
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" className="flex w-full flex-col gap-0 p-0 sm:max-w-md">
@@ -86,23 +100,25 @@ export function ProductFormSheet({ open, product, onOpenChange }: ProductFormShe
         </SheetHeader>
 
         <div className="flex-1 space-y-4 overflow-y-auto px-4 py-5 sm:px-6">
-          <Field label="Product name">
+          <Field label="Product name" error={nameError}>
             <Input
               value={values.name}
               onChange={(event) => setValues({ ...values, name: event.target.value })}
               placeholder="Linen shirt — cream"
-              className="h-11 rounded-xl"
+              className={cn("h-11 rounded-xl", nameError && "border-destructive")}
               autoFocus
+              aria-invalid={Boolean(nameError)}
             />
           </Field>
           <div className="grid grid-cols-2 gap-3">
-            <Field label="Price">
+            <Field label="Price" error={priceError}>
               <Input
                 inputMode="decimal"
                 value={values.price}
                 onChange={(event) => setValues({ ...values, price: event.target.value })}
                 placeholder="0"
-                className="h-11 rounded-xl"
+                className={cn("h-11 rounded-xl", priceError && "border-destructive")}
+                aria-invalid={Boolean(priceError)}
               />
             </Field>
             <Field label="Stock">
@@ -142,14 +158,14 @@ export function ProductFormSheet({ open, product, onOpenChange }: ProductFormShe
               className="h-11 rounded-xl"
             />
           </Field>
-          <Field label="Image URL (optional)">
-            <Input
-              value={values.image_url}
-              onChange={(event) => setValues({ ...values, image_url: event.target.value })}
-              placeholder="https://…"
-              className="h-11 rounded-xl"
-            />
-          </Field>
+          <ImageUpload
+            bucket="product-images"
+            shape="wide"
+            label="Product image (optional)"
+            alt={values.name.trim() || "Product image"}
+            value={values.image_url || null}
+            onChange={(value) => setValues({ ...values, image_url: value ?? "" })}
+          />
           <Field label="Description (optional)">
             <Textarea
               value={values.description}
@@ -182,8 +198,8 @@ export function ProductFormSheet({ open, product, onOpenChange }: ProductFormShe
         <div className="border-t border-border bg-card px-4 py-4 sm:px-6">
           <Button
             className="h-12 w-full rounded-xl text-base"
-            disabled={!values.name.trim() || save.isPending}
-            onClick={() => save.mutate()}
+            disabled={save.isPending}
+            onClick={handleSave}
           >
             {save.isPending ? <Loader2 className="size-4 animate-spin" /> : null}
             {product ? "Save changes" : "Add product"}
@@ -194,11 +210,20 @@ export function ProductFormSheet({ open, product, onOpenChange }: ProductFormShe
   );
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({
+  label,
+  children,
+  error,
+}: {
+  label: string;
+  children: React.ReactNode;
+  error?: string | null;
+}) {
   return (
     <div className="space-y-1.5">
       <Label className="text-xs">{label}</Label>
       {children}
+      {error && <p className="text-xs font-medium text-destructive">{error}</p>}
     </div>
   );
 }
