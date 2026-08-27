@@ -170,6 +170,7 @@ export function NewOrderSheet({ open, onOpenChange }: NewOrderSheetProps) {
       toast.success(`Order ${order.order_number} saved`);
       queryClient.invalidateQueries({ queryKey: ["orders"] });
       queryClient.invalidateQueries({ queryKey: ["activity"] });
+      queryClient.invalidateQueries({ queryKey: ["products"] });
       reset();
       onOpenChange(false);
     },
