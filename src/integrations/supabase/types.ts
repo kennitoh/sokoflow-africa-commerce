@@ -184,6 +184,7 @@ export type Database = {
           order_seq: number
           payment_status: Database["public"]["Enums"]["payment_status"]
           status: Database["public"]["Enums"]["order_status"]
+          stock_restored_at: string | null
           subtotal: number
           total: number
           updated_at: string
@@ -207,6 +208,7 @@ export type Database = {
           order_seq?: number
           payment_status?: Database["public"]["Enums"]["payment_status"]
           status?: Database["public"]["Enums"]["order_status"]
+          stock_restored_at?: string | null
           subtotal?: number
           total?: number
           updated_at?: string
@@ -230,6 +232,7 @@ export type Database = {
           order_seq?: number
           payment_status?: Database["public"]["Enums"]["payment_status"]
           status?: Database["public"]["Enums"]["order_status"]
+          stock_restored_at?: string | null
           subtotal?: number
           total?: number
           updated_at?: string
@@ -433,6 +436,7 @@ export type Database = {
           created_at: string
           id: string
           note: string | null
+          order_id: string | null
           product_id: string
           reason: Database["public"]["Enums"]["stock_reason"]
           user_id: string
@@ -443,6 +447,7 @@ export type Database = {
           created_at?: string
           id?: string
           note?: string | null
+          order_id?: string | null
           product_id: string
           reason?: Database["public"]["Enums"]["stock_reason"]
           user_id?: string
@@ -453,12 +458,20 @@ export type Database = {
           created_at?: string
           id?: string
           note?: string | null
+          order_id?: string | null
           product_id?: string
           reason?: Database["public"]["Enums"]["stock_reason"]
           user_id?: string
           variant_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "stock_movements_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "stock_movements_product_id_fkey"
             columns: ["product_id"]
@@ -543,7 +556,14 @@ export type Database = {
         | "website"
         | "marketplace"
         | "api"
-      stock_reason: "manual" | "order" | "restock" | "return" | "adjustment"
+      stock_reason:
+        | "manual"
+        | "order"
+        | "restock"
+        | "return"
+        | "adjustment"
+        | "cancellation"
+        | "reversal"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -691,7 +711,15 @@ export const Constants = {
         "marketplace",
         "api",
       ],
-      stock_reason: ["manual", "order", "restock", "return", "adjustment"],
+      stock_reason: [
+        "manual",
+        "order",
+        "restock",
+        "return",
+        "adjustment",
+        "cancellation",
+        "reversal",
+      ],
     },
   },
 } as const
