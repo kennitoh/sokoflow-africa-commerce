@@ -136,5 +136,5 @@ export const orderService = {
 };
 
 function cleanDbError(message: string) {
-  return message.replace(/^.*?(?:ERROR:\s*)?/, "").trim() || "Something went wrong";
+  return message.replace(/^ERROR:\s*/i, "").trim() || "Something went wrong";
 }

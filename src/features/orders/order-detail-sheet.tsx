@@ -70,6 +70,7 @@ export function OrderDetailSheet({ orderId, onOpenChange }: OrderDetailSheetProp
     queryClient.invalidateQueries({ queryKey: ["orders"] });
     queryClient.invalidateQueries({ queryKey: ["order", orderId] });
     queryClient.invalidateQueries({ queryKey: ["activity"] });
+    queryClient.invalidateQueries({ queryKey: ["products"] });
   }
 
   const setStatus = useMutation({
