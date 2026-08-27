@@ -319,20 +319,22 @@ export function OrderDetailSheet({ orderId, onOpenChange }: OrderDetailSheetProp
                   {orderStatusMeta[order.status].nextLabel}
                 </Button>
               )}
-              <Button
-                variant="ghost"
-                size="icon"
-                aria-label="Delete order"
-                className="text-destructive"
-                disabled={removeOrder.isPending}
-                onClick={() => removeOrder.mutate()}
-              >
-                {removeOrder.isPending ? (
-                  <Loader2 className="size-4 animate-spin" />
-                ) : (
-                  <Trash2 className="size-4" />
-                )}
-              </Button>
+              {order.status !== "cancelled" && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  aria-label="Cancel order and restore stock"
+                  className="text-destructive"
+                  disabled={cancelOrder.isPending}
+                  onClick={() => cancelOrder.mutate()}
+                >
+                  {cancelOrder.isPending ? (
+                    <Loader2 className="size-4 animate-spin" />
+                  ) : (
+                    <Ban className="size-4" />
+                  )}
+                </Button>
+              )}
             </div>
           </>
         )}
