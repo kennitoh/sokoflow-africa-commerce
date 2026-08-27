@@ -535,7 +535,72 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      cancel_order: {
+        Args: { p_order_id: string }
+        Returns: {
+          amount_paid: number
+          channel: Database["public"]["Enums"]["sales_channel"]
+          created_at: string
+          customer_id: string | null
+          customer_name: string | null
+          delivery_address: string | null
+          delivery_date: string | null
+          delivery_fee: number
+          discount: number
+          external_id: string | null
+          external_source: string | null
+          id: string
+          notes: string | null
+          order_number: string
+          order_seq: number
+          payment_status: Database["public"]["Enums"]["payment_status"]
+          status: Database["public"]["Enums"]["order_status"]
+          stock_restored_at: string | null
+          subtotal: number
+          total: number
+          updated_at: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "orders"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      create_order: {
+        Args: { p_items: Json; p_order: Json }
+        Returns: {
+          amount_paid: number
+          channel: Database["public"]["Enums"]["sales_channel"]
+          created_at: string
+          customer_id: string | null
+          customer_name: string | null
+          delivery_address: string | null
+          delivery_date: string | null
+          delivery_fee: number
+          discount: number
+          external_id: string | null
+          external_source: string | null
+          id: string
+          notes: string | null
+          order_number: string
+          order_seq: number
+          payment_status: Database["public"]["Enums"]["payment_status"]
+          status: Database["public"]["Enums"]["order_status"]
+          stock_restored_at: string | null
+          subtotal: number
+          total: number
+          updated_at: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "orders"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
     }
     Enums: {
       order_status:
