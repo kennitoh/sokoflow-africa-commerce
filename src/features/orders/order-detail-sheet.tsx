@@ -100,14 +100,15 @@ export function OrderDetailSheet({ orderId, onOpenChange }: OrderDetailSheetProp
     onError: () => toast.error("Couldn't save notes — try again"),
   });
 
-  const removeOrder = useMutation({
-    mutationFn: () => orderService.remove([orderId!]),
+  // Orders are never hard-deleted — cancelling keeps the financial history and
+  // restores stock exactly once via the cancel_order transaction.
+  const cancelOrder = useMutation({
+    mutationFn: () => orderService.cancel(orderId!),
     onSuccess: () => {
       refresh();
-      onOpenChange(false);
-      toast.success("Order deleted");
+      toast.success("Order cancelled and stock restored");
     },
-    onError: () => toast.error("Couldn't delete the order — try again"),
+    onError: (error: Error) => toast.error(error.message || "Couldn't cancel the order"),
   });
 
   const timeline = order
