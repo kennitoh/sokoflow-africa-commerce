@@ -7,7 +7,7 @@ import {
   Loader2,
   PackageCheck,
   PlusCircle,
-  Trash2,
+  Ban,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
