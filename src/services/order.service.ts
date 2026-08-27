@@ -50,73 +50,48 @@ export const orderService = {
     return (data ?? []) as Order[];
   },
 
+  // Atomic: order + items + stock + movements + activity happen in one transaction
+  // inside the `create_order` database function. Never do these steps separately.
   async create(input: NewOrderInput): Promise<Order> {
-    const subtotal = input.lines.reduce((sum, line) => sum + line.unit_price * line.quantity, 0);
-    const total = Math.max(0, subtotal - input.discount + input.delivery_fee);
-
-    const { data, error } = await supabase
-      .from("orders")
-      .insert({
+    const { data, error } = await supabase.rpc("create_order", {
+      p_order: {
         customer_id: input.customer_id,
         customer_name: input.customer_name,
         channel: input.channel,
         status: input.status,
         payment_status: input.payment_status,
-        subtotal,
         discount: input.discount,
         delivery_fee: input.delivery_fee,
-        total,
-        amount_paid: input.payment_status === "paid" ? total : input.amount_paid,
+        amount_paid: input.amount_paid,
         delivery_address: input.delivery_address,
         delivery_date: input.delivery_date,
         notes: input.notes,
-      })
-      .select(SELECT)
-      .single();
-    if (error) throw error;
-    const order = data as Order;
-
-    if (input.lines.length > 0) {
-      const { error: itemsError } = await supabase.from("order_items").insert(
-        input.lines.map((line) => ({
-          order_id: order.id,
-          product_id: line.product_id,
-          variant_id: line.variant_id,
-          product_name: line.product_name,
-          variant_name: line.variant_name,
-          unit_price: line.unit_price,
-          quantity: line.quantity,
-          total: line.unit_price * line.quantity,
-        })),
-      );
-      if (itemsError) throw itemsError;
-
-      await Promise.all(
-        input.lines
-          .filter((line) => line.product_id)
-          .map((line) =>
-            supabase.from("stock_movements").insert({
-              product_id: line.product_id!,
-              variant_id: line.variant_id,
-              change: -line.quantity,
-              reason: "order",
-              note: `Order ${order.order_number}`,
-            }),
-          ),
-      );
-    }
-
-    await activityService.log({
-      entity_type: "order",
-      entity_id: order.id,
-      action: "created",
-      message: `Order ${order.order_number} created for ${order.customer_name ?? "walk-in customer"}`,
+      },
+      p_items: input.lines.map((line) => ({
+        product_id: line.product_id,
+        variant_id: line.variant_id,
+        product_name: line.product_name,
+        variant_name: line.variant_name,
+        unit_price: line.unit_price,
+        quantity: line.quantity,
+      })),
     });
+    if (error) throw new Error(cleanDbError(error.message));
+    return data as unknown as Order;
+  },
 
-    return order;
+  async cancel(id: string): Promise<Order> {
+    const { data, error } = await supabase.rpc("cancel_order", { p_order_id: id });
+    if (error) throw new Error(cleanDbError(error.message));
+    return data as unknown as Order;
   },
 
   async updateStatus(ids: string[], status: OrderStatus) {
+    if (status === "cancelled") {
+      // Cancellation restores stock exactly once — must go through the RPC.
+      for (const id of ids) await orderService.cancel(id);
+      return;
+    }
     const { error } = await supabase.from("orders").update({ status }).in("id", ids);
     if (error) throw error;
     await activityService.log({
@@ -158,9 +133,8 @@ export const orderService = {
       message: "Internal notes updated",
     });
   },
-
-  async remove(ids: string[]) {
-    const { error } = await supabase.from("orders").delete().in("id", ids);
-    if (error) throw error;
-  },
 };
+
+function cleanDbError(message: string) {
+  return message.replace(/^.*?(?:ERROR:\s*)?/, "").trim() || "Something went wrong";
+}
