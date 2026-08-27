@@ -170,6 +170,7 @@ export function NewOrderSheet({ open, onOpenChange }: NewOrderSheetProps) {
       toast.success(`Order ${order.order_number} saved`);
       queryClient.invalidateQueries({ queryKey: ["orders"] });
       queryClient.invalidateQueries({ queryKey: ["activity"] });
+      queryClient.invalidateQueries({ queryKey: ["products"] });
       reset();
       onOpenChange(false);
     },
@@ -509,6 +510,16 @@ export function NewOrderSheet({ open, onOpenChange }: NewOrderSheetProps) {
         </div>
 
         <div className="space-y-3 border-t border-border bg-card px-4 py-4 sm:px-6">
+          {saveOrder.isError && (
+            <p
+              role="alert"
+              className="rounded-xl border border-destructive/30 bg-destructive/10 px-3 py-2 text-xs font-medium text-destructive"
+            >
+              {saveOrder.error instanceof Error
+                ? saveOrder.error.message
+                : "Could not save this order"}
+            </p>
+          )}
           <div className="flex items-center justify-between text-sm">
             <span className="text-muted-foreground">
               {lines.length} item{lines.length === 1 ? "" : "s"} · subtotal{" "}

@@ -7,7 +7,7 @@ import {
   Loader2,
   PackageCheck,
   PlusCircle,
-  Trash2,
+  Ban,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -70,6 +70,7 @@ export function OrderDetailSheet({ orderId, onOpenChange }: OrderDetailSheetProp
     queryClient.invalidateQueries({ queryKey: ["orders"] });
     queryClient.invalidateQueries({ queryKey: ["order", orderId] });
     queryClient.invalidateQueries({ queryKey: ["activity"] });
+    queryClient.invalidateQueries({ queryKey: ["products"] });
   }
 
   const setStatus = useMutation({
@@ -100,14 +101,15 @@ export function OrderDetailSheet({ orderId, onOpenChange }: OrderDetailSheetProp
     onError: () => toast.error("Couldn't save notes — try again"),
   });
 
-  const removeOrder = useMutation({
-    mutationFn: () => orderService.remove([orderId!]),
+  // Orders are never hard-deleted — cancelling keeps the financial history and
+  // restores stock exactly once via the cancel_order transaction.
+  const cancelOrder = useMutation({
+    mutationFn: () => orderService.cancel(orderId!),
     onSuccess: () => {
       refresh();
-      onOpenChange(false);
-      toast.success("Order deleted");
+      toast.success("Order cancelled and stock restored");
     },
-    onError: () => toast.error("Couldn't delete the order — try again"),
+    onError: (error: Error) => toast.error(error.message || "Couldn't cancel the order"),
   });
 
   const timeline = order
@@ -318,20 +320,22 @@ export function OrderDetailSheet({ orderId, onOpenChange }: OrderDetailSheetProp
                   {orderStatusMeta[order.status].nextLabel}
                 </Button>
               )}
-              <Button
-                variant="ghost"
-                size="icon"
-                aria-label="Delete order"
-                className="text-destructive"
-                disabled={removeOrder.isPending}
-                onClick={() => removeOrder.mutate()}
-              >
-                {removeOrder.isPending ? (
-                  <Loader2 className="size-4 animate-spin" />
-                ) : (
-                  <Trash2 className="size-4" />
-                )}
-              </Button>
+              {order.status !== "cancelled" && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  aria-label="Cancel order and restore stock"
+                  className="text-destructive"
+                  disabled={cancelOrder.isPending}
+                  onClick={() => cancelOrder.mutate()}
+                >
+                  {cancelOrder.isPending ? (
+                    <Loader2 className="size-4 animate-spin" />
+                  ) : (
+                    <Ban className="size-4" />
+                  )}
+                </Button>
+              )}
             </div>
           </>
         )}

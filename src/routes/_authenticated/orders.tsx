@@ -96,6 +96,7 @@ function OrdersPage() {
       await orderService.updateStatus(selected, status);
       queryClient.invalidateQueries({ queryKey: ["orders"] });
       queryClient.invalidateQueries({ queryKey: ["activity"] });
+      queryClient.invalidateQueries({ queryKey: ["products"] });
       toast.success(`${selected.length} order(s) moved to ${orderStatusMeta[status].label}`);
       setSelected([]);
     } catch (error) {
