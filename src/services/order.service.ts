@@ -105,21 +105,59 @@ export const orderService = {
     });
   },
 
-  async updatePayment(id: string, payment_status: PaymentStatus, total: number) {
-    const { error } = await supabase
+  /**
+   * The database is the source of truth: a trigger validates
+   * 0 <= amount_paid <= total and derives payment_status from the money.
+   * We send our best guess so optimistic UI matches, then refetch.
+   */
+  async updatePaymentAmount(id: string, amountPaid: number, total: number) {
+    const clamped = Math.min(Math.max(amountPaid, 0), total);
+    const derived: PaymentStatus =
+      clamped <= 0 ? "unpaid" : clamped >= total ? "paid" : "partial";
+    const { data, error } = await supabase
       .from("orders")
-      .update(
-        payment_status === "partial"
-          ? { payment_status }
-          : { payment_status, amount_paid: payment_status === "paid" ? total : 0 },
-      )
-      .eq("id", id);
-    if (error) throw error;
+      .update({ amount_paid: clamped, payment_status: derived })
+      .eq("id", id)
+      .select(SELECT)
+      .single();
+    if (error) throw new Error(cleanDbError(error.message));
+    const saved = data as Order;
     await activityService.log({
       entity_type: "order",
       entity_id: id,
-      action: `payment_${payment_status}`,
-      message: `Payment marked as ${payment_status}`,
+      action: `payment_${saved.payment_status}`,
+      message: `Payment updated — ${saved.payment_status} (${Number(saved.amount_paid)} of ${Number(saved.total)})`,
+    });
+    return saved;
+  },
+
+  async markRefunded(id: string) {
+    const { error } = await supabase
+      .from("orders")
+      .update({ payment_status: "refunded" })
+      .eq("id", id);
+    if (error) throw new Error(cleanDbError(error.message));
+    await activityService.log({
+      entity_type: "order",
+      entity_id: id,
+      action: "payment_refunded",
+      message: "Payment marked as refunded",
+    });
+  },
+
+  async updateDelivery(id: string, values: { delivery_date?: string | null; delivery_address?: string | null }) {
+    const { error } = await supabase.from("orders").update(values).eq("id", id);
+    if (error) throw new Error(cleanDbError(error.message));
+    await activityService.log({
+      entity_type: "order",
+      entity_id: id,
+      action: "delivery_updated",
+      message:
+        values.delivery_date === null
+          ? "Delivery date cleared"
+          : values.delivery_date
+            ? `Delivery date set to ${values.delivery_date}`
+            : "Delivery details updated",
     });
   },
 
@@ -134,6 +172,7 @@ export const orderService = {
     });
   },
 };
+
 
 function cleanDbError(message: string) {
   return message.replace(/^ERROR:\s*/i, "").trim() || "Something went wrong";
