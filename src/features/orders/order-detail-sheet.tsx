@@ -282,28 +282,110 @@ export function OrderDetailSheet({ orderId, onOpenChange }: OrderDetailSheetProp
 
               <div className="space-y-2">
                 <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+                  Delivery date
+                </p>
+                <div className="flex flex-wrap items-end gap-2">
+                  <div className="min-w-40 flex-1 space-y-1.5">
+                    <Label htmlFor="delivery-date" className="sr-only">
+                      Delivery date
+                    </Label>
+                    <Input
+                      id="delivery-date"
+                      type="date"
+                      value={deliveryDate}
+                      onChange={(event) => setDeliveryDate(event.target.value)}
+                      className="h-11 rounded-xl"
+                    />
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-11 rounded-xl"
+                    disabled={saveDelivery.isPending || deliveryDate === (order.delivery_date ?? "")}
+                    onClick={() => saveDelivery.mutate(deliveryDate)}
+                  >
+                    {saveDelivery.isPending && <Loader2 className="size-3.5 animate-spin" />}
+                    Save date
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {order.delivery_date
+                    ? `Scheduled for ${formatDay(order.delivery_date)}`
+                    : "No delivery date set yet."}
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
                   Payment
                 </p>
-                <div className="flex flex-wrap gap-2">
-                  {(["unpaid", "partial", "paid", "refunded"] as PaymentStatus[])
-                    .filter((status) => status !== order.payment_status)
-                    .map((status) => (
-                      <Button
-                        key={status}
-                        variant="outline"
-                        size="sm"
-                        className="rounded-full"
-                        disabled={setPayment.isPending}
-                        onClick={() => setPayment.mutate(status)}
-                      >
-                        {setPayment.isPending && setPayment.variables === status && (
-                          <Loader2 className="size-3.5 animate-spin" />
-                        )}
-                        {paymentStatusMeta[status].label}
-                      </Button>
-                    ))}
+                <div className="flex flex-wrap items-end gap-2">
+                  <div className="min-w-32 flex-1 space-y-1.5">
+                    <Label htmlFor="amount-paid" className="text-xs">
+                      Amount paid ({currency})
+                    </Label>
+                    <Input
+                      id="amount-paid"
+                      inputMode="decimal"
+                      value={amountPaid}
+                      onChange={(event) => setAmountPaid(event.target.value)}
+                      className="h-11 rounded-xl"
+                      aria-invalid={amountInvalid}
+                    />
+                  </div>
+                  <Button
+                    size="sm"
+                    className="h-11 rounded-xl"
+                    disabled={
+                      savePayment.isPending ||
+                      amountInvalid ||
+                      parsedAmount === Number(order.amount_paid)
+                    }
+                    onClick={() => savePayment.mutate(parsedAmount)}
+                  >
+                    {savePayment.isPending && <Loader2 className="size-3.5 animate-spin" />}
+                    Record payment
+                  </Button>
+                </div>
+                {amountInvalid && (
+                  <p role="alert" className="text-xs font-medium text-destructive">
+                    Enter an amount between 0 and {formatMoney(Number(order.total), currency)}.
+                  </p>
+                )}
+                <div className="flex flex-wrap gap-2 pt-1">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="rounded-full"
+                    disabled={savePayment.isPending}
+                    onClick={() => savePayment.mutate(Number(order.total))}
+                  >
+                    Mark fully paid
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="rounded-full"
+                    disabled={savePayment.isPending}
+                    onClick={() => savePayment.mutate(0)}
+                  >
+                    Mark unpaid
+                  </Button>
+                  {order.payment_status !== "refunded" && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="rounded-full text-muted-foreground"
+                      disabled={refundOrder.isPending}
+                      onClick={() => refundOrder.mutate()}
+                    >
+                      {refundOrder.isPending && <Loader2 className="size-3.5 animate-spin" />}
+                      Mark refunded
+                    </Button>
+                  )}
                 </div>
               </div>
+
 
               <div className="space-y-2">
                 <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
