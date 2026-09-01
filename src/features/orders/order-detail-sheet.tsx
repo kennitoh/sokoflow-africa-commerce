@@ -15,7 +15,10 @@ import { toast } from "sonner";
 import { ErrorState } from "@/components/common/error-state";
 import { StatusPill } from "@/components/common/status-pill";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+
 import {
   Sheet,
   SheetContent,
@@ -36,7 +39,7 @@ import { formatMoney, timeAgo } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { activityService } from "@/services/activity.service";
 import { orderService } from "@/services/order.service";
-import type { OrderStatus, PaymentStatus } from "@/types";
+import type { OrderStatus } from "@/types";
 
 type OrderDetailSheetProps = {
   orderId: string | null;
@@ -47,6 +50,9 @@ export function OrderDetailSheet({ orderId, onOpenChange }: OrderDetailSheetProp
   const { currency } = useWorkspace();
   const queryClient = useQueryClient();
   const [notes, setNotes] = useState("");
+  const [amountPaid, setAmountPaid] = useState("");
+  const [deliveryDate, setDeliveryDate] = useState("");
+
 
   const orderQuery = useQuery({
     queryKey: ["order", orderId],
@@ -64,7 +70,10 @@ export function OrderDetailSheet({ orderId, onOpenChange }: OrderDetailSheetProp
 
   useEffect(() => {
     setNotes(order?.notes ?? "");
-  }, [order?.id, order?.notes]);
+    setAmountPaid(order ? String(Number(order.amount_paid)) : "");
+    setDeliveryDate(order?.delivery_date ?? "");
+  }, [order?.id, order?.notes, order?.amount_paid, order?.delivery_date, order]);
+
 
   function refresh() {
     queryClient.invalidateQueries({ queryKey: ["orders"] });
@@ -82,15 +91,36 @@ export function OrderDetailSheet({ orderId, onOpenChange }: OrderDetailSheetProp
     onError: () => toast.error("Couldn't update the order — try again"),
   });
 
-  const setPayment = useMutation({
-    mutationFn: (status: PaymentStatus) =>
-      orderService.updatePayment(orderId!, status, Number(order?.total ?? 0)),
-    onSuccess: (_data, status) => {
+  // Payment status is derived by the database from amount_paid vs total.
+  const savePayment = useMutation({
+    mutationFn: (amount: number) =>
+      orderService.updatePaymentAmount(orderId!, amount, Number(order?.total ?? 0)),
+    onSuccess: (saved) => {
       refresh();
-      toast.success(`Payment marked as ${paymentStatusMeta[status].label.toLowerCase()}`);
+      toast.success(`Payment updated — ${paymentStatusMeta[saved.payment_status].label.toLowerCase()}`);
     },
-    onError: () => toast.error("Couldn't update the payment — try again"),
+    onError: (error: Error) => toast.error(error.message || "Couldn't update the payment"),
   });
+
+  const refundOrder = useMutation({
+    mutationFn: () => orderService.markRefunded(orderId!),
+    onSuccess: () => {
+      refresh();
+      toast.success("Payment marked as refunded");
+    },
+    onError: (error: Error) => toast.error(error.message || "Couldn't mark this as refunded"),
+  });
+
+  const saveDelivery = useMutation({
+    mutationFn: (value: string) =>
+      orderService.updateDelivery(orderId!, { delivery_date: value ? value : null }),
+    onSuccess: () => {
+      refresh();
+      toast.success("Delivery date saved");
+    },
+    onError: (error: Error) => toast.error(error.message || "Couldn't save the delivery date"),
+  });
+
 
   const saveNotes = useMutation({
     mutationFn: (value: string) => orderService.updateNotes(orderId!, value),
@@ -209,7 +239,21 @@ export function OrderDetailSheet({ orderId, onOpenChange }: OrderDetailSheetProp
                   value={formatMoney(Number(order.total), currency)}
                   className="text-base font-bold"
                 />
+                <Row label="Paid" value={formatMoney(Number(order.amount_paid), currency)} />
+                <Row
+                  label="Balance due"
+                  value={formatMoney(
+                    Math.max(0, Number(order.total) - Number(order.amount_paid)),
+                    currency,
+                  )}
+                  className={
+                    Number(order.total) - Number(order.amount_paid) > 0
+                      ? "font-semibold text-destructive"
+                      : "font-semibold text-primary"
+                  }
+                />
               </div>
+
 
               <div className="space-y-2">
                 <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
@@ -238,28 +282,110 @@ export function OrderDetailSheet({ orderId, onOpenChange }: OrderDetailSheetProp
 
               <div className="space-y-2">
                 <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+                  Delivery date
+                </p>
+                <div className="flex flex-wrap items-end gap-2">
+                  <div className="min-w-40 flex-1 space-y-1.5">
+                    <Label htmlFor="delivery-date" className="sr-only">
+                      Delivery date
+                    </Label>
+                    <Input
+                      id="delivery-date"
+                      type="date"
+                      value={deliveryDate}
+                      onChange={(event) => setDeliveryDate(event.target.value)}
+                      className="h-11 rounded-xl"
+                    />
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-11 rounded-xl"
+                    disabled={saveDelivery.isPending || deliveryDate === (order.delivery_date ?? "")}
+                    onClick={() => saveDelivery.mutate(deliveryDate)}
+                  >
+                    {saveDelivery.isPending && <Loader2 className="size-3.5 animate-spin" />}
+                    Save date
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {order.delivery_date
+                    ? `Scheduled for ${formatDay(order.delivery_date)}`
+                    : "No delivery date set yet."}
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
                   Payment
                 </p>
-                <div className="flex flex-wrap gap-2">
-                  {(["unpaid", "partial", "paid", "refunded"] as PaymentStatus[])
-                    .filter((status) => status !== order.payment_status)
-                    .map((status) => (
-                      <Button
-                        key={status}
-                        variant="outline"
-                        size="sm"
-                        className="rounded-full"
-                        disabled={setPayment.isPending}
-                        onClick={() => setPayment.mutate(status)}
-                      >
-                        {setPayment.isPending && setPayment.variables === status && (
-                          <Loader2 className="size-3.5 animate-spin" />
-                        )}
-                        {paymentStatusMeta[status].label}
-                      </Button>
-                    ))}
+                <div className="flex flex-wrap items-end gap-2">
+                  <div className="min-w-32 flex-1 space-y-1.5">
+                    <Label htmlFor="amount-paid" className="text-xs">
+                      Amount paid ({currency})
+                    </Label>
+                    <Input
+                      id="amount-paid"
+                      inputMode="decimal"
+                      value={amountPaid}
+                      onChange={(event) => setAmountPaid(event.target.value)}
+                      className="h-11 rounded-xl"
+                      aria-invalid={amountInvalid}
+                    />
+                  </div>
+                  <Button
+                    size="sm"
+                    className="h-11 rounded-xl"
+                    disabled={
+                      savePayment.isPending ||
+                      amountInvalid ||
+                      parsedAmount === Number(order.amount_paid)
+                    }
+                    onClick={() => savePayment.mutate(parsedAmount)}
+                  >
+                    {savePayment.isPending && <Loader2 className="size-3.5 animate-spin" />}
+                    Record payment
+                  </Button>
+                </div>
+                {amountInvalid && (
+                  <p role="alert" className="text-xs font-medium text-destructive">
+                    Enter an amount between 0 and {formatMoney(Number(order.total), currency)}.
+                  </p>
+                )}
+                <div className="flex flex-wrap gap-2 pt-1">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="rounded-full"
+                    disabled={savePayment.isPending}
+                    onClick={() => savePayment.mutate(Number(order.total))}
+                  >
+                    Mark fully paid
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="rounded-full"
+                    disabled={savePayment.isPending}
+                    onClick={() => savePayment.mutate(0)}
+                  >
+                    Mark unpaid
+                  </Button>
+                  {order.payment_status !== "refunded" && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="rounded-full text-muted-foreground"
+                      disabled={refundOrder.isPending}
+                      onClick={() => refundOrder.mutate()}
+                    >
+                      {refundOrder.isPending && <Loader2 className="size-3.5 animate-spin" />}
+                      Mark refunded
+                    </Button>
+                  )}
                 </div>
               </div>
+
 
               <div className="space-y-2">
                 <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">

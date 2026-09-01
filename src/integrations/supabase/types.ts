@@ -601,6 +601,10 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      derive_payment_status: {
+        Args: { p_amount_paid: number; p_total: number }
+        Returns: Database["public"]["Enums"]["payment_status"]
+      }
     }
     Enums: {
       order_status:
