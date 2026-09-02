@@ -5,6 +5,8 @@ import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { EmptyState } from "@/components/common/empty-state";
+import { ErrorState } from "@/components/common/error-state";
+
 import { StatusPill } from "@/components/common/status-pill";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -190,10 +192,13 @@ function OrdersPage() {
           </div>
         )}
 
-        {ordersQuery.isLoading ? (
+        {ordersQuery.isError ? (
+          <ErrorState error={ordersQuery.error} onRetry={() => ordersQuery.refetch()} />
+        ) : ordersQuery.isLoading ? (
           <div className="grid place-items-center py-16">
             <Loader2 className="size-5 animate-spin text-muted-foreground" />
           </div>
+
         ) : filtered.length === 0 ? (
           <EmptyState
             icon={ClipboardList}
