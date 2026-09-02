@@ -35,7 +35,7 @@ import {
   paymentStatusMeta,
 } from "@/features/orders/order-status";
 import { useWorkspace } from "@/hooks/use-workspace";
-import { formatMoney, timeAgo } from "@/lib/format";
+import { formatDay, formatMoney, timeAgo } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { activityService } from "@/services/activity.service";
 import { orderService } from "@/services/order.service";
@@ -73,6 +73,14 @@ export function OrderDetailSheet({ orderId, onOpenChange }: OrderDetailSheetProp
     setAmountPaid(order ? String(Number(order.amount_paid)) : "");
     setDeliveryDate(order?.delivery_date ?? "");
   }, [order?.id, order?.notes, order?.amount_paid, order?.delivery_date, order]);
+
+  // Client-side mirror of the database rule 0 <= amount_paid <= total.
+  const orderTotal = Number(order?.total ?? 0);
+  const parsedAmount = Number.parseFloat(amountPaid);
+  const amountInvalid =
+    !Number.isFinite(parsedAmount) || parsedAmount < 0 || parsedAmount > orderTotal;
+
+
 
 
   function refresh() {
