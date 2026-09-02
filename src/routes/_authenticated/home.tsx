@@ -13,6 +13,8 @@ import {
 import { useState } from "react";
 
 import { EmptyState } from "@/components/common/empty-state";
+import { ErrorState } from "@/components/common/error-state";
+
 import { StatusPill } from "@/components/common/status-pill";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -20,7 +22,7 @@ import { useNewOrder } from "@/features/orders/new-order-context";
 import { OrderDetailSheet } from "@/features/orders/order-detail-sheet";
 import { orderStatusMeta, paymentStatusMeta } from "@/features/orders/order-status";
 import { useWorkspace } from "@/hooks/use-workspace";
-import { formatMoney, initials, timeAgo, todayISO } from "@/lib/format";
+import { formatDay, formatMoney, initials, timeAgo, todayISO } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { activityService } from "@/services/activity.service";
 import { customerService } from "@/services/customer.service";
@@ -133,9 +135,20 @@ function HomePage() {
 
       </header>
 
+      {(ordersQuery.isError || productsQuery.isError) && (
+        <ErrorState
+          error={ordersQuery.error ?? productsQuery.error}
+          onRetry={() => {
+            void ordersQuery.refetch();
+            void productsQuery.refetch();
+          }}
+        />
+      )}
+
       <Button onClick={openNewOrder} size="lg" className="h-12 w-full rounded-xl text-base sm:w-auto">
         <Plus className="size-5" /> New order
       </Button>
+
 
       <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {tiles.map((tile) => (
@@ -216,7 +229,13 @@ function HomePage() {
                           <StatusPill tone={paymentStatusMeta[order.payment_status].tone}>
                             {paymentStatusMeta[order.payment_status].label}
                           </StatusPill>
+                          {order.delivery_date && (
+                            <span className="text-[11px] text-muted-foreground">
+                              Deliver {formatDay(order.delivery_date)}
+                            </span>
+                          )}
                         </span>
+
                       </span>
                       <span className="shrink-0 text-right">
                         <span className="block text-sm font-semibold">
