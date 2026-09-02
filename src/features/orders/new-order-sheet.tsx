@@ -41,7 +41,10 @@ export function NewOrderSheet({ open, onOpenChange }: NewOrderSheetProps) {
   const [deliveryFee, setDeliveryFee] = useState("");
   const [channel, setChannel] = useState<SalesChannel>("whatsapp");
   const [payment, setPayment] = useState<PaymentStatus>("unpaid");
+  const [amountPaid, setAmountPaid] = useState("");
+  const [deliveryDate, setDeliveryDate] = useState("");
   const [notes, setNotes] = useState("");
+
 
   const customersQuery = useQuery({
     queryKey: ["customers"],
@@ -84,6 +87,15 @@ export function NewOrderSheet({ open, onOpenChange }: NewOrderSheetProps) {
   const total = Math.max(0, subtotal - toNumber(discount) + toNumber(deliveryFee));
   const buyerName = customer?.name || walkInName.trim() || customerQuery.trim();
 
+  // Mirrors the database rule 0 <= amount_paid <= total; the DB has the final say.
+  const parsedPaid = Number.parseFloat(amountPaid);
+  const partialInvalid =
+    payment === "partial" &&
+    (!Number.isFinite(parsedPaid) || parsedPaid <= 0 || parsedPaid > total);
+  const amountPaidToSave =
+    payment === "paid" ? total : payment === "partial" ? (parsedPaid || 0) : 0;
+
+
   function reset() {
     setCustomerQuery("");
     setCustomer(null);
@@ -96,7 +108,10 @@ export function NewOrderSheet({ open, onOpenChange }: NewOrderSheetProps) {
     setDeliveryFee("");
     setChannel("whatsapp");
     setPayment("unpaid");
+    setAmountPaid("");
+    setDeliveryDate("");
     setNotes("");
+
   }
 
   function addProduct(product: Product) {
@@ -160,9 +175,10 @@ export function NewOrderSheet({ open, onOpenChange }: NewOrderSheetProps) {
         payment_status: payment,
         discount: toNumber(discount),
         delivery_fee: toNumber(deliveryFee),
-        amount_paid: payment === "paid" ? total : 0,
+        amount_paid: amountPaidToSave,
         delivery_address: customer?.address ?? null,
-        delivery_date: null,
+        delivery_date: deliveryDate || null,
+
         notes: notes.trim() || null,
         lines,
       }),
@@ -178,7 +194,7 @@ export function NewOrderSheet({ open, onOpenChange }: NewOrderSheetProps) {
       toast.error(error instanceof Error ? error.message : "Could not save this order"),
   });
 
-  const canSave = lines.length > 0 && Boolean(buyerName);
+  const canSave = lines.length > 0 && Boolean(buyerName) && !partialInvalid;
 
   return (
     <Sheet
@@ -450,7 +466,20 @@ export function NewOrderSheet({ open, onOpenChange }: NewOrderSheetProps) {
                 className="h-11 rounded-xl"
               />
             </div>
+            <div className="col-span-2 space-y-1.5">
+              <Label htmlFor="delivery-date" className="text-xs">
+                Delivery date (optional)
+              </Label>
+              <Input
+                id="delivery-date"
+                type="date"
+                value={deliveryDate}
+                onChange={(event) => setDeliveryDate(event.target.value)}
+                className="h-11 rounded-xl"
+              />
+            </div>
           </section>
+
 
           {/* CHANNEL + PAYMENT */}
           <section className="space-y-3">
@@ -493,7 +522,33 @@ export function NewOrderSheet({ open, onOpenChange }: NewOrderSheetProps) {
                 </button>
               ))}
             </div>
+            {payment === "partial" && (
+              <div className="space-y-1.5">
+                <Label htmlFor="amount-paid" className="text-xs">
+                  Amount paid now ({currency})
+                </Label>
+                <Input
+                  id="amount-paid"
+                  inputMode="decimal"
+                  value={amountPaid}
+                  onChange={(event) => setAmountPaid(event.target.value)}
+                  placeholder="0"
+                  className="h-11 rounded-xl"
+                  aria-invalid={partialInvalid}
+                />
+                {partialInvalid ? (
+                  <p role="alert" className="text-xs font-medium text-destructive">
+                    Enter an amount between 1 and {formatMoney(total, currency)}.
+                  </p>
+                ) : (
+                  <p className="text-xs text-muted-foreground">
+                    Balance due {formatMoney(Math.max(0, total - amountPaidToSave), currency)}
+                  </p>
+                )}
+              </div>
+            )}
           </section>
+
 
           <section className="space-y-1.5">
             <Label htmlFor="notes" className="text-xs">

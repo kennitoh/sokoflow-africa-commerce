@@ -5,6 +5,8 @@ import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import { EmptyState } from "@/components/common/empty-state";
+import { ErrorState } from "@/components/common/error-state";
+
 import { StatusPill } from "@/components/common/status-pill";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -27,7 +29,7 @@ import {
   paymentStatusMeta,
 } from "@/features/orders/order-status";
 import { useWorkspace } from "@/hooks/use-workspace";
-import { formatMoney, timeAgo } from "@/lib/format";
+import { formatDay, formatMoney, timeAgo } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { orderService } from "@/services/order.service";
 import type { Order, OrderStatus } from "@/types";
@@ -190,10 +192,13 @@ function OrdersPage() {
           </div>
         )}
 
-        {ordersQuery.isLoading ? (
+        {ordersQuery.isError ? (
+          <ErrorState error={ordersQuery.error} onRetry={() => ordersQuery.refetch()} />
+        ) : ordersQuery.isLoading ? (
           <div className="grid place-items-center py-16">
             <Loader2 className="size-5 animate-spin text-muted-foreground" />
           </div>
+
         ) : filtered.length === 0 ? (
           <EmptyState
             icon={ClipboardList}
@@ -241,7 +246,11 @@ function OrdersPage() {
                         </p>
                         <p className="text-xs text-muted-foreground">
                           {order.order_number} · {channelMeta[order.channel].label}
+                          {order.delivery_date
+                            ? ` · Deliver ${formatDay(order.delivery_date)}`
+                            : ""}
                         </p>
+
                       </div>
                       <p className="shrink-0 text-sm font-bold">
                         {formatMoney(Number(order.total), currency)}
@@ -297,6 +306,8 @@ function OrdersPage() {
                       <TableHead className="text-xs uppercase">Status</TableHead>
                       <TableHead className="text-xs uppercase">Payment</TableHead>
                       <TableHead className="text-xs uppercase">Channel</TableHead>
+                      <TableHead className="text-xs uppercase">Delivery</TableHead>
+
                       <TableHead className="text-right text-xs uppercase">Total</TableHead>
                       <TableHead className="text-right text-xs uppercase">Next</TableHead>
                     </TableRow>
@@ -378,6 +389,10 @@ function OrderRow({
       <TableCell className="text-sm text-muted-foreground">
         {channelMeta[order.channel].label}
       </TableCell>
+      <TableCell className="text-sm text-muted-foreground">
+        {order.delivery_date ? formatDay(order.delivery_date) : "—"}
+      </TableCell>
+
       <TableCell className="text-right text-sm font-semibold">
         {formatMoney(Number(order.total), currency)}
       </TableCell>

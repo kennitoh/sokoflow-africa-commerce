@@ -13,6 +13,8 @@ import {
 import { useState } from "react";
 
 import { EmptyState } from "@/components/common/empty-state";
+import { ErrorState } from "@/components/common/error-state";
+
 import { StatusPill } from "@/components/common/status-pill";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -20,7 +22,7 @@ import { useNewOrder } from "@/features/orders/new-order-context";
 import { OrderDetailSheet } from "@/features/orders/order-detail-sheet";
 import { orderStatusMeta, paymentStatusMeta } from "@/features/orders/order-status";
 import { useWorkspace } from "@/hooks/use-workspace";
-import { formatMoney, initials, timeAgo, todayISO } from "@/lib/format";
+import { formatDay, formatMoney, initials, timeAgo, todayISO } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { activityService } from "@/services/activity.service";
 import { customerService } from "@/services/customer.service";
@@ -70,15 +72,21 @@ function HomePage() {
 
   const pending = orders.filter((order) => order.status === "pending");
   const readyToPack = orders.filter((order) => order.status === "confirmed");
+  // A delivery only counts as "today" when a delivery date says so.
   const deliveriesToday = orders.filter(
     (order) =>
-      (order.delivery_date === today || order.created_at.slice(0, 10) === today) &&
-      ["packed", "out_for_delivery"].includes(order.status),
+      order.delivery_date === today &&
+      order.status !== "delivered" &&
+      order.status !== "cancelled",
   );
   const lowStock = products.filter(isLowStock);
-  const unpaidTotal = orders
-    .filter((order) => order.payment_status !== "paid" && order.status !== "cancelled")
-    .reduce((sum, order) => sum + Number(order.total) - Number(order.amount_paid), 0);
+  const outstandingTotal = orders
+    .filter((order) => order.status !== "cancelled" && order.payment_status !== "refunded")
+    .reduce(
+      (sum, order) => sum + Math.max(0, Number(order.total) - Number(order.amount_paid)),
+      0,
+    );
+
 
   const tiles = [
     {
@@ -98,9 +106,10 @@ function HomePage() {
     {
       label: "Deliveries today",
       value: deliveriesToday.length,
-      hint: "On the way to customers",
+      hint: "Scheduled for today",
       icon: Truck,
       to: "/orders" as const,
+
     },
     {
       label: "Low stock",
@@ -121,13 +130,25 @@ function HomePage() {
         <p className="text-sm text-muted-foreground">
           {orders.length === 0
             ? "Let's record your first order — it takes about twenty seconds."
-            : `${pending.length + readyToPack.length} orders need you today · ${formatMoney(unpaidTotal, currency)} still to collect.`}
+            : `${pending.length + readyToPack.length} orders need you today · ${formatMoney(outstandingTotal, currency)} still to collect.`}
         </p>
+
       </header>
+
+      {(ordersQuery.isError || productsQuery.isError) && (
+        <ErrorState
+          error={ordersQuery.error ?? productsQuery.error}
+          onRetry={() => {
+            void ordersQuery.refetch();
+            void productsQuery.refetch();
+          }}
+        />
+      )}
 
       <Button onClick={openNewOrder} size="lg" className="h-12 w-full rounded-xl text-base sm:w-auto">
         <Plus className="size-5" /> New order
       </Button>
+
 
       <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {tiles.map((tile) => (
@@ -208,7 +229,13 @@ function HomePage() {
                           <StatusPill tone={paymentStatusMeta[order.payment_status].tone}>
                             {paymentStatusMeta[order.payment_status].label}
                           </StatusPill>
+                          {order.delivery_date && (
+                            <span className="text-[11px] text-muted-foreground">
+                              Deliver {formatDay(order.delivery_date)}
+                            </span>
+                          )}
                         </span>
+
                       </span>
                       <span className="shrink-0 text-right">
                         <span className="block text-sm font-semibold">
