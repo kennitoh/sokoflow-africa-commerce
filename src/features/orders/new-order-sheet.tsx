@@ -466,7 +466,20 @@ export function NewOrderSheet({ open, onOpenChange }: NewOrderSheetProps) {
                 className="h-11 rounded-xl"
               />
             </div>
+            <div className="col-span-2 space-y-1.5">
+              <Label htmlFor="delivery-date" className="text-xs">
+                Delivery date (optional)
+              </Label>
+              <Input
+                id="delivery-date"
+                type="date"
+                value={deliveryDate}
+                onChange={(event) => setDeliveryDate(event.target.value)}
+                className="h-11 rounded-xl"
+              />
+            </div>
           </section>
+
 
           {/* CHANNEL + PAYMENT */}
           <section className="space-y-3">
@@ -509,7 +522,33 @@ export function NewOrderSheet({ open, onOpenChange }: NewOrderSheetProps) {
                 </button>
               ))}
             </div>
+            {payment === "partial" && (
+              <div className="space-y-1.5">
+                <Label htmlFor="amount-paid" className="text-xs">
+                  Amount paid now ({currency})
+                </Label>
+                <Input
+                  id="amount-paid"
+                  inputMode="decimal"
+                  value={amountPaid}
+                  onChange={(event) => setAmountPaid(event.target.value)}
+                  placeholder="0"
+                  className="h-11 rounded-xl"
+                  aria-invalid={partialInvalid}
+                />
+                {partialInvalid ? (
+                  <p role="alert" className="text-xs font-medium text-destructive">
+                    Enter an amount between 1 and {formatMoney(total, currency)}.
+                  </p>
+                ) : (
+                  <p className="text-xs text-muted-foreground">
+                    Balance due {formatMoney(Math.max(0, total - amountPaidToSave), currency)}
+                  </p>
+                )}
+              </div>
+            )}
           </section>
+
 
           <section className="space-y-1.5">
             <Label htmlFor="notes" className="text-xs">
