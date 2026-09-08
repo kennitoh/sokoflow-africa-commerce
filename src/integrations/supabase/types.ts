@@ -47,6 +47,156 @@ export type Database = {
         }
         Relationships: []
       }
+      admin_audit_log: {
+        Row: {
+          action: string
+          admin_user_id: string
+          created_at: string
+          id: string
+          metadata: Json
+          target_user_id: string | null
+        }
+        Insert: {
+          action: string
+          admin_user_id: string
+          created_at?: string
+          id?: string
+          metadata?: Json
+          target_user_id?: string | null
+        }
+        Update: {
+          action?: string
+          admin_user_id?: string
+          created_at?: string
+          id?: string
+          metadata?: Json
+          target_user_id?: string | null
+        }
+        Relationships: []
+      }
+      admin_settings: {
+        Row: {
+          key: string
+          updated_at: string
+          value: Json
+        }
+        Insert: {
+          key: string
+          updated_at?: string
+          value: Json
+        }
+        Update: {
+          key?: string
+          updated_at?: string
+          value?: Json
+        }
+        Relationships: []
+      }
+      admin_support_issues: {
+        Row: {
+          business_user_id: string
+          category: string
+          created_at: string
+          created_by: string
+          description: string | null
+          id: string
+          internal_note: string | null
+          resolved_at: string | null
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          business_user_id: string
+          category?: string
+          created_at?: string
+          created_by: string
+          description?: string | null
+          id?: string
+          internal_note?: string | null
+          resolved_at?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          business_user_id?: string
+          category?: string
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          id?: string
+          internal_note?: string | null
+          resolved_at?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      admin_users: {
+        Row: {
+          created_at: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          role?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          role?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      business_accounts: {
+        Row: {
+          account_status: string
+          billing_status: string
+          created_at: string
+          first_order_at: string | null
+          id: string
+          invited_at: string | null
+          plan: string
+          subscription_status: string
+          trial_end: string | null
+          trial_start: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          account_status?: string
+          billing_status?: string
+          created_at?: string
+          first_order_at?: string | null
+          id?: string
+          invited_at?: string | null
+          plan?: string
+          subscription_status?: string
+          trial_end?: string | null
+          trial_start?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          account_status?: string
+          billing_status?: string
+          created_at?: string
+          first_order_at?: string | null
+          id?: string
+          invited_at?: string | null
+          plan?: string
+          subscription_status?: string
+          trial_end?: string | null
+          trial_start?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       customers: {
         Row: {
           address: string | null
@@ -535,6 +685,97 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_assert: { Args: never; Returns: string }
+      admin_business_detail: { Args: { p_user_id: string }; Returns: Json }
+      admin_business_rows: {
+        Args: never
+        Returns: {
+          account_status: string
+          billing_status: string
+          business_name: string
+          business_type: string
+          city: string
+          country: string
+          created_at: string
+          currency: string
+          customers: number
+          description: string
+          first_completed_order_at: string
+          first_customer_at: string
+          first_order_at: string
+          first_product_at: string
+          health: string
+          last_active_at: string
+          last_activity_at: string
+          last_order_at: string
+          logo_url: string
+          onboarding_completed: boolean
+          order_value: number
+          orders: number
+          orders_month: number
+          orders_week: number
+          outstanding: number
+          owner_email: string
+          owner_name: string
+          owner_phone: string
+          plan: string
+          products: number
+          profile_completion: number
+          returned_after_first_order: boolean
+          sales_channels: string[]
+          subscription_status: string
+          user_id: string
+        }[]
+      }
+      admin_create_support_issue: {
+        Args: {
+          p_category: string
+          p_description: string
+          p_internal_note?: string
+          p_title: string
+          p_user_id: string
+        }
+        Returns: Json
+      }
+      admin_list_audit_log: { Args: { p_limit?: number }; Returns: Json }
+      admin_list_businesses: {
+        Args: {
+          p_health?: string
+          p_limit?: number
+          p_offset?: number
+          p_onboarding?: string
+          p_search?: string
+          p_sort?: string
+          p_status?: string
+        }
+        Returns: Json
+      }
+      admin_list_support_issues: {
+        Args: { p_limit?: number; p_status?: string }
+        Returns: Json
+      }
+      admin_log_action: {
+        Args: { _action: string; _metadata?: Json; _target: string }
+        Returns: undefined
+      }
+      admin_platform_activity: { Args: { p_limit?: number }; Returns: Json }
+      admin_platform_metrics: { Args: never; Returns: Json }
+      admin_threshold: {
+        Args: { _fallback: number; _name: string }
+        Returns: number
+      }
+      admin_update_account_status: {
+        Args: { p_status: string; p_user_id: string }
+        Returns: Json
+      }
+      admin_update_support_issue: {
+        Args: {
+          p_internal_note?: string
+          p_issue_id: string
+          p_status?: string
+        }
+        Returns: Json
+      }
       cancel_order: {
         Args: { p_order_id: string }
         Returns: {
@@ -605,6 +846,7 @@ export type Database = {
         Args: { p_amount_paid: number; p_total: number }
         Returns: Database["public"]["Enums"]["payment_status"]
       }
+      is_platform_admin: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
       order_status:
