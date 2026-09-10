@@ -80,7 +80,7 @@ export const adminService = {
       p_user_id: input.userId,
       p_title: input.title,
       p_category: input.category,
-      p_description: input.description ?? undefined,
+      p_description: input.description ?? "",
       p_internal_note: input.internalNote ?? undefined,
     });
     if (error) throw error;
