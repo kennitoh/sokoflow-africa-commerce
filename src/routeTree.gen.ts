@@ -22,8 +22,10 @@ import { Route as AuthenticatedOnboardingRouteImport } from './routes/_authentic
 import { Route as AuthenticatedOrdersRouteImport } from './routes/_authenticated/orders'
 import { Route as AuthenticatedProductsRouteImport } from './routes/_authenticated/products'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
+import { Route as AdminIndexRouteImport } from './routes/admin/index'
 import { Route as AuthenticatedCustomersIndexRouteImport } from './routes/_authenticated/customers.index'
 import { Route as AuthenticatedCustomersCustomerIdRouteImport } from './routes/_authenticated/customers.$customerId'
+import { Route as AdminBusinessesIndexRouteImport } from './routes/admin/businesses.index'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -89,6 +91,11 @@ const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
 const AuthenticatedCustomersIndexRoute =
   AuthenticatedCustomersIndexRouteImport.update({
     id: '/customers/',
@@ -101,10 +108,15 @@ const AuthenticatedCustomersCustomerIdRoute =
     path: '/customers/$customerId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AdminBusinessesIndexRoute = AdminBusinessesIndexRouteImport.update({
+  id: '/businesses/',
+  path: '/businesses/',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/admin': typeof AdminRouteRoute
+  '/admin': typeof AdminRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/reset-password': typeof ResetPasswordRoute
@@ -115,12 +127,13 @@ export interface FileRoutesByFullPath {
   '/orders': typeof AuthenticatedOrdersRoute
   '/products': typeof AuthenticatedProductsRoute
   '/settings': typeof AuthenticatedSettingsRoute
+  '/admin/': typeof AdminIndexRoute
   '/customers/$customerId': typeof AuthenticatedCustomersCustomerIdRoute
   '/customers/': typeof AuthenticatedCustomersIndexRoute
+  '/admin/businesses/': typeof AdminBusinessesIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/admin': typeof AdminRouteRoute
   '/auth': typeof AuthRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/reset-password': typeof ResetPasswordRoute
@@ -131,14 +144,16 @@ export interface FileRoutesByTo {
   '/orders': typeof AuthenticatedOrdersRoute
   '/products': typeof AuthenticatedProductsRoute
   '/settings': typeof AuthenticatedSettingsRoute
+  '/admin': typeof AdminIndexRoute
   '/customers/$customerId': typeof AuthenticatedCustomersCustomerIdRoute
   '/customers': typeof AuthenticatedCustomersIndexRoute
+  '/admin/businesses': typeof AdminBusinessesIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
-  '/admin': typeof AdminRouteRoute
+  '/admin': typeof AdminRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/reset-password': typeof ResetPasswordRoute
@@ -149,8 +164,10 @@ export interface FileRoutesById {
   '/_authenticated/orders': typeof AuthenticatedOrdersRoute
   '/_authenticated/products': typeof AuthenticatedProductsRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
+  '/admin/': typeof AdminIndexRoute
   '/_authenticated/customers/$customerId': typeof AuthenticatedCustomersCustomerIdRoute
   '/_authenticated/customers/': typeof AuthenticatedCustomersIndexRoute
+  '/admin/businesses/': typeof AdminBusinessesIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -167,12 +184,13 @@ export interface FileRouteTypes {
     | '/orders'
     | '/products'
     | '/settings'
+    | '/admin/'
     | '/customers/$customerId'
     | '/customers/'
+    | '/admin/businesses/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/admin'
     | '/auth'
     | '/forgot-password'
     | '/reset-password'
@@ -183,8 +201,10 @@ export interface FileRouteTypes {
     | '/orders'
     | '/products'
     | '/settings'
+    | '/admin'
     | '/customers/$customerId'
     | '/customers'
+    | '/admin/businesses'
   id:
     | '__root__'
     | '/'
@@ -200,14 +220,16 @@ export interface FileRouteTypes {
     | '/_authenticated/orders'
     | '/_authenticated/products'
     | '/_authenticated/settings'
+    | '/admin/'
     | '/_authenticated/customers/$customerId'
     | '/_authenticated/customers/'
+    | '/admin/businesses/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
-  AdminRouteRoute: typeof AdminRouteRoute
+  AdminRouteRoute: typeof AdminRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
@@ -307,6 +329,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/admin/': {
+      id: '/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
     '/_authenticated/customers/': {
       id: '/_authenticated/customers/'
       path: '/customers'
@@ -320,6 +349,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/customers/$customerId'
       preLoaderRoute: typeof AuthenticatedCustomersCustomerIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/admin/businesses/': {
+      id: '/admin/businesses/'
+      path: '/businesses'
+      fullPath: '/admin/businesses/'
+      preLoaderRoute: typeof AdminBusinessesIndexRouteImport
+      parentRoute: typeof AdminRouteRoute
     }
   }
 }
@@ -349,10 +385,24 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
 const AuthenticatedRouteRouteWithChildren =
   AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
 
+interface AdminRouteRouteChildren {
+  AdminIndexRoute: typeof AdminIndexRoute
+  AdminBusinessesIndexRoute: typeof AdminBusinessesIndexRoute
+}
+
+const AdminRouteRouteChildren: AdminRouteRouteChildren = {
+  AdminIndexRoute: AdminIndexRoute,
+  AdminBusinessesIndexRoute: AdminBusinessesIndexRoute,
+}
+
+const AdminRouteRouteWithChildren = AdminRouteRoute._addFileChildren(
+  AdminRouteRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
-  AdminRouteRoute: AdminRouteRoute,
+  AdminRouteRoute: AdminRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   ForgotPasswordRoute: ForgotPasswordRoute,
   ResetPasswordRoute: ResetPasswordRoute,
