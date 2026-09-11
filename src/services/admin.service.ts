@@ -41,7 +41,7 @@ export const adminService = {
     offset?: number;
   }): Promise<AdminBusinessList> {
     const { data, error } = await supabase.rpc("admin_list_businesses", {
-      p_search: params.search ?? undefined,
+      ...(params.search ? { p_search: params.search } : {}),
       p_status: params.status ?? "all",
       p_onboarding: params.onboarding ?? "all",
       p_health: params.health ?? "all",
@@ -81,7 +81,7 @@ export const adminService = {
       p_title: input.title,
       p_category: input.category,
       p_description: input.description ?? "",
-      p_internal_note: input.internalNote ?? undefined,
+      ...(input.internalNote ? { p_internal_note: input.internalNote } : {}),
     });
     if (error) throw error;
   },
@@ -89,8 +89,8 @@ export const adminService = {
   async updateIssue(issueId: string, status?: string, internalNote?: string) {
     const { error } = await supabase.rpc("admin_update_support_issue", {
       p_issue_id: issueId,
-      p_status: status ?? undefined,
-      p_internal_note: internalNote ?? undefined,
+      ...(status ? { p_status: status } : {}),
+      ...(internalNote ? { p_internal_note: internalNote } : {}),
     });
     if (error) throw error;
   },
