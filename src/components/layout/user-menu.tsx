@@ -1,6 +1,6 @@
 import { useNavigate } from "@tanstack/react-router";
-import { useQueryClient } from "@tanstack/react-query";
-import { LifeBuoy, LogOut, Settings, User } from "lucide-react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { LifeBuoy, LogOut, Settings, ShieldCheck, User } from "lucide-react";
 import { toast } from "sonner";
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -14,6 +14,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/hooks/use-auth";
+import { adminService } from "@/services/admin.service";
 import { authService } from "@/services/auth.service";
 
 function initialsFrom(value: string) {
