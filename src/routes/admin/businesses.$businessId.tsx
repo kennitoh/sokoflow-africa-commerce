@@ -39,7 +39,7 @@ export const Route = createFileRoute("/admin/businesses/$businessId")({
       { name: "robots", content: "noindex, nofollow" },
     ],
   }),
-  component: AdminBusinessDetailPage;
+  component: AdminBusinessDetailPage,
 });
 
 function AdminBusinessDetailPage() {
