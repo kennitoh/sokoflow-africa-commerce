@@ -31,6 +31,15 @@ export function UserMenu() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
+  // Only real administrators can read this row, so the link stays hidden for everyone else.
+  const adminQuery = useQuery({
+    queryKey: ["admin", "is-admin", user?.id],
+    queryFn: () => adminService.isAdmin(user!.id),
+    enabled: Boolean(user?.id),
+    staleTime: 300_000,
+    retry: false,
+  });
+
   const email = user?.email ?? "";
   const displayName =
     (user?.user_metadata?.["full_name"] as string | undefined) || email.split("@")[0] || "Account";
