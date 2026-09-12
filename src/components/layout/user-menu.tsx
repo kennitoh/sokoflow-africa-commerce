@@ -84,6 +84,14 @@ export function UserMenu() {
         <DropdownMenuItem onSelect={() => toast.info("Support chat is coming soon.")}>
           <LifeBuoy className="size-4" /> Get help
         </DropdownMenuItem>
+        {adminQuery.data && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onSelect={() => navigate({ to: "/admin" })}>
+              <ShieldCheck className="size-4" /> SokoFlow Ops
+            </DropdownMenuItem>
+          </>
+        )}
         <DropdownMenuSeparator />
         <DropdownMenuItem onSelect={handleSignOut} className="text-destructive">
           <LogOut className="size-4" /> Sign out
