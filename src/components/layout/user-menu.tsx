@@ -1,6 +1,6 @@
 import { useNavigate } from "@tanstack/react-router";
-import { useQueryClient } from "@tanstack/react-query";
-import { LifeBuoy, LogOut, Settings, User } from "lucide-react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { LifeBuoy, LogOut, Settings, ShieldCheck, User } from "lucide-react";
 import { toast } from "sonner";
 
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -14,6 +14,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/hooks/use-auth";
+import { adminService } from "@/services/admin.service";
 import { authService } from "@/services/auth.service";
 
 function initialsFrom(value: string) {
@@ -29,6 +30,15 @@ export function UserMenu() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+
+  // Only real administrators can read this row, so the link stays hidden for everyone else.
+  const adminQuery = useQuery({
+    queryKey: ["admin", "is-admin", user?.id],
+    queryFn: () => adminService.isAdmin(user!.id),
+    enabled: Boolean(user?.id),
+    staleTime: 300_000,
+    retry: false,
+  });
 
   const email = user?.email ?? "";
   const displayName =
@@ -74,6 +84,14 @@ export function UserMenu() {
         <DropdownMenuItem onSelect={() => toast.info("Support chat is coming soon.")}>
           <LifeBuoy className="size-4" /> Get help
         </DropdownMenuItem>
+        {adminQuery.data && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onSelect={() => navigate({ to: "/admin" })}>
+              <ShieldCheck className="size-4" /> SokoFlow Ops
+            </DropdownMenuItem>
+          </>
+        )}
         <DropdownMenuSeparator />
         <DropdownMenuItem onSelect={handleSignOut} className="text-destructive">
           <LogOut className="size-4" /> Sign out
