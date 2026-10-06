@@ -145,6 +145,38 @@ function AdminBusinessDetailPage() {
         />
       </section>
 
+      <Card className="shadow-soft">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">Lifecycle</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ol className="grid gap-2 sm:grid-cols-3 lg:grid-cols-7">
+            {[
+              { label: "Account created", done: true },
+              { label: "Onboarding", done: business.onboarding_completed },
+              { label: "Profile", done: business.profile_completion >= 80 },
+              { label: "Products", done: business.products > 0 },
+              { label: "Customers", done: business.customers > 0 },
+              { label: "First order", done: Boolean(business.first_order_at) },
+              { label: "Repeat use", done: Boolean(business.returned_after_first_order) },
+            ].map((step) => (
+              <li
+                key={step.label}
+                className={
+                  step.done
+                    ? "flex items-center gap-2 rounded-lg bg-primary-soft px-3 py-2 text-sm font-medium text-primary"
+                    : "flex items-center gap-2 rounded-lg border border-dashed border-border px-3 py-2 text-sm text-muted-foreground"
+                }
+              >
+                <span aria-hidden>{step.done ? "✓" : "✗"}</span>
+                {step.label}
+                <span className="sr-only">{step.done ? "done" : "not yet"}</span>
+              </li>
+            ))}
+          </ol>
+        </CardContent>
+      </Card>
+
       <div className="grid gap-4 lg:grid-cols-3">
         <Card className="shadow-soft lg:col-span-2">
           <CardHeader className="pb-3">
