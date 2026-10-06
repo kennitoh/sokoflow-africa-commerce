@@ -38,10 +38,30 @@ function NotFoundComponent() {
   );
 }
 
+const CHUNK_RELOAD_KEY = "sokoflow:chunk-reload-at";
+
+function isStaleChunkError(error: unknown) {
+  const msg = error instanceof Error ? error.message : String(error ?? "");
+  return /Failed to fetch dynamically imported module|Importing a module script failed|error loading dynamically imported module/i.test(
+    msg,
+  );
+}
+
+// After a new publish, old asset files are gone; reload once to fetch the fresh version.
+function reloadOnceForStaleChunk() {
+  if (typeof window === "undefined") return false;
+  const last = Number(sessionStorage.getItem(CHUNK_RELOAD_KEY) ?? 0);
+  if (Date.now() - last < 10_000) return false;
+  sessionStorage.setItem(CHUNK_RELOAD_KEY, String(Date.now()));
+  window.location.reload();
+  return true;
+}
+
 function ErrorComponent({ error, reset }: { error: unknown; reset: () => void }) {
   console.error(error);
   const router = useRouter();
   useEffect(() => {
+    if (isStaleChunkError(error) && reloadOnceForStaleChunk()) return;
     reportLovableError(error, { boundary: "tanstack_root_error_component" });
   }, [error]);
 
@@ -130,6 +150,14 @@ function RootShell({ children }: { children: ReactNode }) {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const router = useRouter();
+
+  useEffect(() => {
+    const onPreloadError = (event: Event) => {
+      if (reloadOnceForStaleChunk()) event.preventDefault();
+    };
+    window.addEventListener("vite:preloadError", onPreloadError);
+    return () => window.removeEventListener("vite:preloadError", onPreloadError);
+  }, []);
 
   useEffect(() => {
     const { data } = supabase.auth.onAuthStateChange((event) => {
