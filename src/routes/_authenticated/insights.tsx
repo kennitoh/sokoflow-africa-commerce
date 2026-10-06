@@ -21,7 +21,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useNewOrder } from "@/features/orders/new-order-context";
 import { useWorkspace } from "@/hooks/use-workspace";
-import { formatCompactMoney, formatMoney } from "@/lib/format";
+import { formatCompactMoney, formatMoney, localDateKey } from "@/lib/format";
 import { customerService } from "@/services/customer.service";
 import { orderService } from "@/services/order.service";
 import { productService } from "@/services/product.service";
@@ -54,7 +54,7 @@ function InsightsPage() {
   const orderIds = orders.map((order) => order.id);
 
   const itemsQuery = useQuery({
-    queryKey: ["order-items", orderIds.length],
+    queryKey: ["order-items", orderIds.join(",")],
     queryFn: () => orderService.items(orderIds),
     enabled: orderIds.length > 0,
   });
@@ -68,8 +68,8 @@ function InsightsPage() {
     for (let offset = 13; offset >= 0; offset -= 1) {
       const date = new Date();
       date.setDate(date.getDate() - offset);
-      const key = date.toISOString().slice(0, 10);
-      const dayOrders = orders.filter((order) => order.created_at.slice(0, 10) === key);
+      const key = localDateKey(date);
+      const dayOrders = orders.filter((order) => localDateKey(new Date(order.created_at)) === key);
       days.push({
         day: date.toLocaleDateString(undefined, { day: "numeric", month: "short" }),
         revenue: dayOrders.reduce((sum, order) => sum + Number(order.total), 0),

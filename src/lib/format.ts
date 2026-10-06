@@ -46,6 +46,14 @@ export function initials(value: string) {
   );
 }
 
+/** Local calendar date (YYYY-MM-DD) — never UTC, to avoid off-by-one days near midnight. */
+export function localDateKey(date: Date = new Date()) {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
 export function todayISO() {
-  return new Date().toISOString().slice(0, 10);
+  return localDateKey();
 }
