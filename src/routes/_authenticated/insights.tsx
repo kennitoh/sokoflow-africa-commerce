@@ -21,7 +21,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useNewOrder } from "@/features/orders/new-order-context";
 import { useWorkspace } from "@/hooks/use-workspace";
-import { formatCompactMoney, formatMoney } from "@/lib/format";
+import { formatCompactMoney, formatMoney, localDateKey } from "@/lib/format";
 import { customerService } from "@/services/customer.service";
 import { orderService } from "@/services/order.service";
 import { productService } from "@/services/product.service";
