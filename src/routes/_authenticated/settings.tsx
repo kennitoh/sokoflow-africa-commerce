@@ -19,6 +19,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useTheme } from "@/contexts/theme-context";
 import { useAuth } from "@/hooks/use-auth";
 import { cn } from "@/lib/utils";
+import { PublishingCard } from "@/features/storefront/publishing-card";
 import { profileService } from "@/services/profile.service";
 import type { Profile, SalesChannelKey } from "@/types";
 
@@ -498,6 +499,8 @@ function SettingsPage() {
           </Card>
         </div>
 
+        <div className="space-y-4">
+        <PublishingCard businessName={profile?.business_name ?? ""} />
         <Card>
           <CardContent className="space-y-5 p-5">
             <SectionHeader title="Appearance" description="Your theme is remembered on this device." />
@@ -521,6 +524,7 @@ function SettingsPage() {
             </div>
           </CardContent>
         </Card>
+        </div>
       </div>
     </>
   );
