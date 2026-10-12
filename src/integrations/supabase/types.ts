@@ -847,6 +847,11 @@ export type Database = {
         Returns: Database["public"]["Enums"]["payment_status"]
       }
       is_platform_admin: { Args: { _user_id: string }; Returns: boolean }
+      public_storefront: { Args: { p_slug: string }; Returns: Json }
+      storefront_image_visible: {
+        Args: { p_bucket: string; p_name: string }
+        Returns: boolean
+      }
     }
     Enums: {
       order_status:
