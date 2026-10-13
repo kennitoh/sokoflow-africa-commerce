@@ -33,8 +33,8 @@ export const getStorefront = createServerFn({ method: "GET" })
   .inputValidator((input: { slug: string }) => ({ slug: String(input.slug ?? "").toLowerCase() }))
   .handler(async ({ data }): Promise<PublicStorefront | null> => {
     if (!SLUG.test(data.slug)) return null;
-    const url = process.env.SUPABASE_URL ?? process.env.VITE_SUPABASE_URL;
-    const key = process.env.SUPABASE_PUBLISHABLE_KEY ?? process.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+    const url = process.env['SUPABASE_URL'] ?? process.env['VITE_SUPABASE_URL'];
+    const key = process.env['SUPABASE_PUBLISHABLE_KEY'] ?? process.env['VITE_SUPABASE_PUBLISHABLE_KEY'];
     if (!url || !key) throw new Error("Storefront is temporarily unavailable.");
     const response = await fetch(`${url}/rest/v1/rpc/public_storefront`, {
       method: "POST",

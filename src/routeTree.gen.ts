@@ -25,6 +25,7 @@ import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticat
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
 import { Route as AdminActivityRouteImport } from './routes/admin/activity'
 import { Route as AdminSupportRouteImport } from './routes/admin/support'
+import { Route as SSlugRouteImport } from './routes/s.$slug'
 import { Route as AuthenticatedCustomersIndexRouteImport } from './routes/_authenticated/customers.index'
 import { Route as AuthenticatedCustomersCustomerIdRouteImport } from './routes/_authenticated/customers.$customerId'
 import { Route as AdminBusinessesIndexRouteImport } from './routes/admin/businesses.index'
@@ -109,6 +110,11 @@ const AdminSupportRoute = AdminSupportRouteImport.update({
   path: '/support',
   getParentRoute: () => AdminRouteRoute,
 } as any)
+const SSlugRoute = SSlugRouteImport.update({
+  id: '/s/$slug',
+  path: '/s/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedCustomersIndexRoute =
   AuthenticatedCustomersIndexRouteImport.update({
     id: '/customers/',
@@ -148,6 +154,7 @@ export interface FileRoutesByFullPath {
   '/settings': typeof AuthenticatedSettingsRoute
   '/admin/activity': typeof AdminActivityRoute
   '/admin/support': typeof AdminSupportRoute
+  '/s/$slug': typeof SSlugRoute
   '/admin/': typeof AdminIndexRoute
   '/customers/$customerId': typeof AuthenticatedCustomersCustomerIdRoute
   '/admin/businesses/$businessId': typeof AdminBusinessesBusinessIdRoute
@@ -168,6 +175,7 @@ export interface FileRoutesByTo {
   '/settings': typeof AuthenticatedSettingsRoute
   '/admin/activity': typeof AdminActivityRoute
   '/admin/support': typeof AdminSupportRoute
+  '/s/$slug': typeof SSlugRoute
   '/admin': typeof AdminIndexRoute
   '/customers/$customerId': typeof AuthenticatedCustomersCustomerIdRoute
   '/admin/businesses/$businessId': typeof AdminBusinessesBusinessIdRoute
@@ -191,6 +199,7 @@ export interface FileRoutesById {
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/admin/activity': typeof AdminActivityRoute
   '/admin/support': typeof AdminSupportRoute
+  '/s/$slug': typeof SSlugRoute
   '/admin/': typeof AdminIndexRoute
   '/_authenticated/customers/$customerId': typeof AuthenticatedCustomersCustomerIdRoute
   '/admin/businesses/$businessId': typeof AdminBusinessesBusinessIdRoute
@@ -214,6 +223,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/admin/activity'
     | '/admin/support'
+    | '/s/$slug'
     | '/admin/'
     | '/customers/$customerId'
     | '/admin/businesses/$businessId'
@@ -234,6 +244,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/admin/activity'
     | '/admin/support'
+    | '/s/$slug'
     | '/admin'
     | '/customers/$customerId'
     | '/admin/businesses/$businessId'
@@ -256,6 +267,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings'
     | '/admin/activity'
     | '/admin/support'
+    | '/s/$slug'
     | '/admin/'
     | '/_authenticated/customers/$customerId'
     | '/admin/businesses/$businessId'
@@ -271,6 +283,7 @@ export interface RootRouteChildren {
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   VerifyEmailRoute: typeof VerifyEmailRoute
+  SSlugRoute: typeof SSlugRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -387,6 +400,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminSupportRouteImport
       parentRoute: typeof AdminRouteRoute
     }
+    '/s/$slug': {
+      id: '/s/$slug'
+      path: '/s/$slug'
+      fullPath: '/s/$slug'
+      preLoaderRoute: typeof SSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/customers/': {
       id: '/_authenticated/customers/'
       path: '/customers'
@@ -471,6 +491,7 @@ const rootRouteChildren: RootRouteChildren = {
   ForgotPasswordRoute: ForgotPasswordRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   VerifyEmailRoute: VerifyEmailRoute,
+  SSlugRoute: SSlugRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
