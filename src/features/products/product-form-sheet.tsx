@@ -14,6 +14,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { productService } from "@/services/product.service";
@@ -31,6 +32,7 @@ export function ProductFormSheet({ open, product, onOpenChange }: ProductFormShe
   const queryClient = useQueryClient();
   const [values, setValues] = useState(() => emptyValues());
   const [status, setStatus] = useState<ProductStatus>("active");
+  const [published, setPublished] = useState(false);
   const [touched, setTouched] = useState(false);
 
   useEffect(() => {
@@ -47,9 +49,11 @@ export function ProductFormSheet({ open, product, onOpenChange }: ProductFormShe
         description: product.description ?? "",
       });
       setStatus(product.status);
+      setPublished(Boolean(product.published_to_web));
     } else {
       setValues(emptyValues());
       setStatus("active");
+      setPublished(false);
     }
     setTouched(false);
   }, [open, product]);
@@ -71,6 +75,7 @@ export function ProductFormSheet({ open, product, onOpenChange }: ProductFormShe
         stock: Number(values.stock) || 0,
         low_stock_threshold: Number(values.low_stock_threshold) || 5,
         status,
+        published_to_web: published,
       };
       return product ? productService.update(product.id, payload) : productService.create(payload);
     },
@@ -193,6 +198,15 @@ export function ProductFormSheet({ open, product, onOpenChange }: ProductFormShe
               ))}
             </div>
           </Field>
+          <label className="flex items-center justify-between gap-3 rounded-xl border border-border px-3 py-3">
+            <span className="min-w-0">
+              <span className="block text-sm font-medium">Show on public page</span>
+              <span className="block text-xs text-muted-foreground">
+                Visible to anyone with your business link while it is active and your page is published. Cost and stock stay private.
+              </span>
+            </span>
+            <Switch checked={published} onCheckedChange={setPublished} aria-label="Show on public page" />
+          </label>
         </div>
 
         <div className="border-t border-border bg-card px-4 py-4 sm:px-6">

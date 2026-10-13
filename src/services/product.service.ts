@@ -15,6 +15,7 @@ export type ProductInput = {
   low_stock_threshold: number;
   image_url?: string | null;
   status: Product["status"];
+  published_to_web?: boolean;
 };
 
 export const productService = {
