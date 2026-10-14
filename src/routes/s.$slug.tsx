@@ -1,9 +1,11 @@
+import { useState } from "react";
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
-import { Facebook, Instagram, Mail, MapPin, MessageCircle, Music2, Package, Phone, Store } from "lucide-react";
+import { Facebook, Instagram, Mail, MapPin, MessageCircle, Music2, Package, Phone, Plus, ShoppingBag, Store } from "lucide-react";
 
 import { SmartImage } from "@/components/common/smart-image";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { CartSheet, useCart } from "@/features/storefront/storefront-cart";
 import { getStorefront, type PublicStorefront } from "@/services/storefront.functions";
 
 export const Route = createFileRoute("/s/$slug")({
@@ -39,13 +41,7 @@ export const Route = createFileRoute("/s/$slug")({
   pendingComponent: () => <Centered title="Loading…" body="" />,
 });
 
-function money(value: number, currency: string) {
-  try {
-    return new Intl.NumberFormat(undefined, { style: "currency", currency, maximumFractionDigits: 2 }).format(value);
-  } catch {
-    return `${currency} ${value.toLocaleString()}`;
-  }
-}
+import { money } from "@/features/storefront/storefront-cart";
 
 function waLink(number: string) {
   return `https://wa.me/${number.replace(/[^0-9]/g, "")}`;
@@ -53,6 +49,9 @@ function waLink(number: string) {
 
 function StorefrontPage() {
   const store = Route.useLoaderData() as PublicStorefront;
+  const cart = useCart(store.slug);
+  const [cartOpen, setCartOpen] = useState(false);
+  const cartCount = Object.values(cart.lines).reduce((a, b) => a + b, 0);
   const location = [store.city, store.country].filter(Boolean).join(", ");
   const contacts = [
     store.whatsapp && { icon: MessageCircle, label: "WhatsApp", href: waLink(store.whatsapp) },
@@ -118,13 +117,33 @@ function StorefrontPage() {
                   <p className="line-clamp-2 text-sm font-medium">{p.name}</p>
                   <p className="text-sm font-bold text-primary">{money(Number(p.price), store.currency)}</p>
                   {p.description && <p className="line-clamp-2 text-xs text-muted-foreground">{p.description}</p>}
+                  {p.in_stock ? (
+                    <Button
+                      size="sm"
+                      variant={cart.lines[p.id] ? "secondary" : "default"}
+                      className="mt-2 w-full"
+                      onClick={() => cart.set(p.id, (cart.lines[p.id] ?? 0) + 1)}
+                    >
+                      <Plus className="size-3.5" /> {cart.lines[p.id] ? `In cart (${cart.lines[p.id]})` : "Add"}
+                    </Button>
+                  ) : (
+                    <p className="mt-2 rounded-md bg-muted py-1.5 text-center text-xs font-medium text-muted-foreground">Out of stock</p>
+                  )}
                 </CardContent>
               </Card>
             ))}
           </div>
         )}
       </main>
-      <footer className="py-8 text-center text-xs text-muted-foreground">
+      {cartCount > 0 && (
+        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-card/95 p-3 backdrop-blur">
+          <Button size="lg" className="mx-auto flex w-full max-w-md" onClick={() => setCartOpen(true)}>
+            <ShoppingBag className="size-4" /> View order · {cartCount} item{cartCount === 1 ? "" : "s"}
+          </Button>
+        </div>
+      )}
+      <CartSheet open={cartOpen} onOpenChange={setCartOpen} slug={store.slug} currency={store.currency} products={store.products} cart={cart} />
+      <footer className="py-8 pb-24 text-center text-xs text-muted-foreground">
         Powered by <Link to="/" className="font-semibold hover:underline">SokoFlow</Link>
       </footer>
     </div>
