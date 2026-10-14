@@ -25,6 +25,7 @@ import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticat
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
 import { Route as AdminActivityRouteImport } from './routes/admin/activity'
 import { Route as AdminSupportRouteImport } from './routes/admin/support'
+import { Route as OrderTokenRouteImport } from './routes/order.$token'
 import { Route as SSlugRouteImport } from './routes/s.$slug'
 import { Route as AuthenticatedCustomersIndexRouteImport } from './routes/_authenticated/customers.index'
 import { Route as AuthenticatedCustomersCustomerIdRouteImport } from './routes/_authenticated/customers.$customerId'
@@ -110,6 +111,11 @@ const AdminSupportRoute = AdminSupportRouteImport.update({
   path: '/support',
   getParentRoute: () => AdminRouteRoute,
 } as any)
+const OrderTokenRoute = OrderTokenRouteImport.update({
+  id: '/order/$token',
+  path: '/order/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SSlugRoute = SSlugRouteImport.update({
   id: '/s/$slug',
   path: '/s/$slug',
@@ -154,6 +160,7 @@ export interface FileRoutesByFullPath {
   '/settings': typeof AuthenticatedSettingsRoute
   '/admin/activity': typeof AdminActivityRoute
   '/admin/support': typeof AdminSupportRoute
+  '/order/$token': typeof OrderTokenRoute
   '/s/$slug': typeof SSlugRoute
   '/admin/': typeof AdminIndexRoute
   '/customers/$customerId': typeof AuthenticatedCustomersCustomerIdRoute
@@ -175,6 +182,7 @@ export interface FileRoutesByTo {
   '/settings': typeof AuthenticatedSettingsRoute
   '/admin/activity': typeof AdminActivityRoute
   '/admin/support': typeof AdminSupportRoute
+  '/order/$token': typeof OrderTokenRoute
   '/s/$slug': typeof SSlugRoute
   '/admin': typeof AdminIndexRoute
   '/customers/$customerId': typeof AuthenticatedCustomersCustomerIdRoute
@@ -199,6 +207,7 @@ export interface FileRoutesById {
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/admin/activity': typeof AdminActivityRoute
   '/admin/support': typeof AdminSupportRoute
+  '/order/$token': typeof OrderTokenRoute
   '/s/$slug': typeof SSlugRoute
   '/admin/': typeof AdminIndexRoute
   '/_authenticated/customers/$customerId': typeof AuthenticatedCustomersCustomerIdRoute
@@ -223,6 +232,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/admin/activity'
     | '/admin/support'
+    | '/order/$token'
     | '/s/$slug'
     | '/admin/'
     | '/customers/$customerId'
@@ -244,6 +254,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/admin/activity'
     | '/admin/support'
+    | '/order/$token'
     | '/s/$slug'
     | '/admin'
     | '/customers/$customerId'
@@ -267,6 +278,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings'
     | '/admin/activity'
     | '/admin/support'
+    | '/order/$token'
     | '/s/$slug'
     | '/admin/'
     | '/_authenticated/customers/$customerId'
@@ -283,6 +295,7 @@ export interface RootRouteChildren {
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   VerifyEmailRoute: typeof VerifyEmailRoute
+  OrderTokenRoute: typeof OrderTokenRoute
   SSlugRoute: typeof SSlugRoute
 }
 
@@ -400,6 +413,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminSupportRouteImport
       parentRoute: typeof AdminRouteRoute
     }
+    '/order/$token': {
+      id: '/order/$token'
+      path: '/order/$token'
+      fullPath: '/order/$token'
+      preLoaderRoute: typeof OrderTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/s/$slug': {
       id: '/s/$slug'
       path: '/s/$slug'
@@ -491,6 +511,7 @@ const rootRouteChildren: RootRouteChildren = {
   ForgotPasswordRoute: ForgotPasswordRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   VerifyEmailRoute: VerifyEmailRoute,
+  OrderTokenRoute: OrderTokenRoute,
   SSlugRoute: SSlugRoute,
 }
 export const routeTree = rootRouteImport
