@@ -329,10 +329,12 @@ export type Database = {
           external_id: string | null
           external_source: string | null
           id: string
+          idempotency_key: string | null
           notes: string | null
           order_number: string
           order_seq: number
           payment_status: Database["public"]["Enums"]["payment_status"]
+          public_token: string | null
           status: Database["public"]["Enums"]["order_status"]
           stock_restored_at: string | null
           subtotal: number
@@ -353,10 +355,12 @@ export type Database = {
           external_id?: string | null
           external_source?: string | null
           id?: string
+          idempotency_key?: string | null
           notes?: string | null
           order_number?: string
           order_seq?: number
           payment_status?: Database["public"]["Enums"]["payment_status"]
+          public_token?: string | null
           status?: Database["public"]["Enums"]["order_status"]
           stock_restored_at?: string | null
           subtotal?: number
@@ -377,10 +381,12 @@ export type Database = {
           external_id?: string | null
           external_source?: string | null
           id?: string
+          idempotency_key?: string | null
           notes?: string | null
           order_number?: string
           order_seq?: number
           payment_status?: Database["public"]["Enums"]["payment_status"]
+          public_token?: string | null
           status?: Database["public"]["Enums"]["order_status"]
           stock_restored_at?: string | null
           subtotal?: number
@@ -791,10 +797,12 @@ export type Database = {
           external_id: string | null
           external_source: string | null
           id: string
+          idempotency_key: string | null
           notes: string | null
           order_number: string
           order_seq: number
           payment_status: Database["public"]["Enums"]["payment_status"]
+          public_token: string | null
           status: Database["public"]["Enums"]["order_status"]
           stock_restored_at: string | null
           subtotal: number
@@ -824,10 +832,12 @@ export type Database = {
           external_id: string | null
           external_source: string | null
           id: string
+          idempotency_key: string | null
           notes: string | null
           order_number: string
           order_seq: number
           payment_status: Database["public"]["Enums"]["payment_status"]
+          public_token: string | null
           status: Database["public"]["Enums"]["order_status"]
           stock_restored_at: string | null
           subtotal: number
@@ -847,6 +857,16 @@ export type Database = {
         Returns: Database["public"]["Enums"]["payment_status"]
       }
       is_platform_admin: { Args: { _user_id: string }; Returns: boolean }
+      public_checkout: {
+        Args: {
+          p_customer: Json
+          p_idempotency_key: string
+          p_items: Json
+          p_slug: string
+        }
+        Returns: Json
+      }
+      public_order_confirmation: { Args: { p_token: string }; Returns: Json }
       public_storefront: { Args: { p_slug: string }; Returns: Json }
       storefront_image_visible: {
         Args: { p_bucket: string; p_name: string }
