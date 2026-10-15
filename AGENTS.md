@@ -10,3 +10,4 @@
 <!-- LOVABLE:END -->
 
 - Public storefront data is served only through the SECURITY DEFINER `public_storefront(slug)` RPC and the `storefront_image_visible` storage policy; never add anon SELECT policies on stores/profiles/products, because those tables hold private owner data (cost, contacts).
+- Guest checkout goes only through the SECURITY DEFINER public_checkout RPC (owner resolved from slug, DB prices, idempotency key per owner); confirmation via unguessable orders.public_token. Never grant anon create_order/cancel_order — keeps owner RPCs private.
