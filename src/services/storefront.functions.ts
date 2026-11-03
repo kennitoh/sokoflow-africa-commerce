@@ -102,7 +102,7 @@ export const submitCheckout = createServerFn({ method: "POST" })
     const ip =
       getRequestHeader("cf-connecting-ip") ||
       getRequestHeader("x-real-ip") ||
-      (getRequestHeader("x-forwarded-for") ?? "").split(",")[0].trim() ||
+      (getRequestHeader("x-forwarded-for") ?? "").split(",")[0]?.trim() ||
       "unknown";
     const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(`sokoflow-checkout:${ip}`));
     const sourceHash = Array.from(new Uint8Array(digest), (b) => b.toString(16).padStart(2, "0")).join("");
