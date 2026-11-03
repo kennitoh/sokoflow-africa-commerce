@@ -97,17 +97,36 @@ export const submitCheckout = createServerFn({ method: "POST" })
   }))
   .handler(async ({ data }): Promise<{ ok: true; token: string } | { ok: false; error: string }> => {
     if (!SLUG.test(data.slug)) return { ok: false, error: "This business page is not available." };
-    const res = await callPublicRpc("public_checkout", {
+    const { getRequestHeader } = await import("@tanstack/react-start/server");
+    // Source = connecting IP set by the edge (not client-controllable), hashed so no raw IP is stored.
+    const ip =
+      getRequestHeader("cf-connecting-ip") ||
+      getRequestHeader("x-real-ip") ||
+      (getRequestHeader("x-forwarded-for") ?? "").split(",")[0].trim() ||
+      "unknown";
+    const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(`sokoflow-checkout:${ip}`));
+    const sourceHash = Array.from(new Uint8Array(digest), (b) => b.toString(16).padStart(2, "0")).join("");
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: body, error } = await supabaseAdmin.rpc("guarded_checkout", {
+      p_source_hash: sourceHash,
       p_slug: data.slug,
       p_customer: data.customer,
       p_items: data.items,
       p_idempotency_key: data.idempotencyKey,
     });
-    const body = (await res.json().catch(() => null)) as { token?: string; message?: string } | null;
-    if (!res.ok || !body?.token) {
-      return { ok: false, error: body?.message?.replace(/^ERROR:\s*/i, "") || "We couldn't place your order. Please try again." };
+    if (error) {
+      console.error("guarded_checkout failed", error.message);
+      return { ok: false, error: "We couldn't place your order. Please try again." };
     }
-    return { ok: true, token: body.token };
+    const res = body as { token?: string; error?: string; rate_limited?: boolean; retry_after?: number } | null;
+    if (res?.rate_limited) {
+      const mins = Math.max(1, Math.round((res.retry_after ?? 600) / 60));
+      return { ok: false, error: `Too many order attempts right now. Please wait about ${mins} minutes and try again, or contact the business directly.` };
+    }
+    if (!res?.token) {
+      return { ok: false, error: res?.error?.replace(/^ERROR:\s*/i, "") || "We couldn't place your order. Please try again." };
+    }
+    return { ok: true, token: res.token };
   });
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
