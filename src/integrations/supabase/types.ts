@@ -197,6 +197,33 @@ export type Database = {
         }
         Relationships: []
       }
+      checkout_attempts: {
+        Row: {
+          created_at: string
+          id: number
+          ok: boolean
+          phone_digits: string | null
+          source_hash: string
+          store_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: number
+          ok: boolean
+          phone_digits?: string | null
+          source_hash: string
+          store_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: number
+          ok?: boolean
+          phone_digits?: string | null
+          source_hash?: string
+          store_id?: string | null
+        }
+        Relationships: []
+      }
       customers: {
         Row: {
           address: string | null
@@ -855,6 +882,16 @@ export type Database = {
       derive_payment_status: {
         Args: { p_amount_paid: number; p_total: number }
         Returns: Database["public"]["Enums"]["payment_status"]
+      }
+      guarded_checkout: {
+        Args: {
+          p_customer: Json
+          p_idempotency_key: string
+          p_items: Json
+          p_slug: string
+          p_source_hash: string
+        }
+        Returns: Json
       }
       is_platform_admin: { Args: { _user_id: string }; Returns: boolean }
       public_checkout: {
