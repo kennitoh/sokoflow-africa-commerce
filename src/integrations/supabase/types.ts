@@ -718,6 +718,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      adjust_product_stock: {
+        Args: {
+          p_change: number
+          p_note?: string
+          p_product_id: string
+          p_reason?: Database["public"]["Enums"]["stock_reason"]
+        }
+        Returns: number
+      }
       admin_assert: { Args: never; Returns: string }
       admin_business_detail: { Args: { p_user_id: string }; Returns: Json }
       admin_business_rows: {
@@ -883,6 +892,7 @@ export type Database = {
         Args: { p_amount_paid: number; p_total: number }
         Returns: Database["public"]["Enums"]["payment_status"]
       }
+      expire_stale_public_orders: { Args: never; Returns: number }
       guarded_checkout: {
         Args: {
           p_customer: Json
