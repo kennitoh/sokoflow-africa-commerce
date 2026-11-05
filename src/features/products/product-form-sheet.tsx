@@ -65,19 +65,24 @@ export function ProductFormSheet({ open, product, onOpenChange }: ProductFormShe
 
   const save = useMutation({
     mutationFn: async () => {
-      const payload = {
+      const base = {
         name: values.name.trim(),
         category: values.category.trim() || null,
         sku: values.sku.trim() || null,
         description: values.description.trim() || null,
         image_url: values.image_url.trim() || null,
         price: Number(values.price) || 0,
-        stock: Number(values.stock) || 0,
         low_stock_threshold: Number(values.low_stock_threshold) || 5,
         status,
         published_to_web: published,
       };
-      return product ? productService.update(product.id, payload) : productService.create(payload);
+      const stock = Number(values.stock) || 0;
+      if (!product) return productService.create({ ...base, stock });
+      const updated = await productService.update(product.id, base);
+      // A stock edit becomes one atomic adjustment so a movement is always recorded.
+      const delta = stock - (Number(product.stock) || 0);
+      if (delta !== 0) await productService.adjustStock(product, delta, "Edited in product form");
+      return updated;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["products"] });
