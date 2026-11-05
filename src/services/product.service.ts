@@ -43,9 +43,13 @@ export const productService = {
   },
 
   async update(id: string, input: Partial<ProductInput>): Promise<Product> {
+    // Stock never travels through a plain product update: it must go through adjustStock so
+    // a matching stock movement is always recorded.
+    const changes: Partial<ProductInput> = { ...input };
+    delete changes.stock;
     const { data, error } = await supabase
       .from("products")
-      .update(input)
+      .update(changes)
       .eq("id", id)
       .select(SELECT)
       .single();
@@ -53,20 +57,17 @@ export const productService = {
     return data as Product;
   },
 
+  // Atomic stock change on the server: locks the row, refuses a result below zero,
+  // and records the stock movement with its reason — all in one step.
   async adjustStock(product: Product, change: number, note?: string) {
-    const nextStock = Math.max(0, product.stock + change);
-    const { error } = await supabase
-      .from("products")
-      .update({ stock: nextStock })
-      .eq("id", product.id);
-    if (error) throw error;
-    await supabase.from("stock_movements").insert({
-      product_id: product.id,
-      change,
-      reason: "adjustment",
-      note: note ?? null,
+    const { data, error } = await supabase.rpc("adjust_product_stock", {
+      p_product_id: product.id,
+      p_change: change,
+      p_reason: "adjustment",
+      p_note: note ?? null,
     });
-    return nextStock;
+    if (error) throw new Error(error.message.replace(/^ERROR:\s*/i, "").trim() || "Could not update stock");
+    return Number(data);
   },
 
   async remove(id: string) {

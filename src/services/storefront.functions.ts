@@ -77,6 +77,19 @@ async function callPublicRpc(fn: string, body: unknown) {
   });
 }
 
+/** Keyed SHA-256 hash: the key lives in server settings, never in the code or the attempt log. */
+async function hmacHex(secret: string, message: string): Promise<string> {
+  const key = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(secret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
+  const signature = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(message));
+  return Array.from(new Uint8Array(signature), (b) => b.toString(16).padStart(2, "0")).join("");
+}
+
 /** Public guest checkout. Prices, totals, owner and stock are all resolved inside the public_checkout RPC. */
 export const submitCheckout = createServerFn({ method: "POST" })
   .inputValidator((input: CheckoutInput) => ({
@@ -98,19 +111,33 @@ export const submitCheckout = createServerFn({ method: "POST" })
   .handler(async ({ data }): Promise<{ ok: true; token: string } | { ok: false; error: string }> => {
     if (!SLUG.test(data.slug)) return { ok: false, error: "This business page is not available." };
     const { getRequestHeader } = await import("@tanstack/react-start/server");
-    // Source = connecting IP set by the edge (not client-controllable), hashed so no raw IP is stored.
+    // Source = connecting IP set by the edge (not client-controllable). Without a connection
+    // address we refuse the order instead of putting every visitor into one shared bucket.
     const ip =
       getRequestHeader("cf-connecting-ip") ||
       getRequestHeader("x-real-ip") ||
       (getRequestHeader("x-forwarded-for") ?? "").split(",")[0]?.trim() ||
-      "unknown";
-    const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(`sokoflow-checkout:${ip}`));
-    const sourceHash = Array.from(new Uint8Array(digest), (b) => b.toString(16).padStart(2, "0")).join("");
+      "";
+    if (!ip) {
+      return {
+        ok: false,
+        error: "We couldn't verify your connection. Please refresh the page and try again.",
+      };
+    }
+    const secret = process.env['CHECKOUT_HASH_SECRET'];
+    if (!secret) {
+      console.error("CHECKOUT_HASH_SECRET is not configured");
+      return { ok: false, error: "Ordering is temporarily unavailable. Please try again later." };
+    }
+    // Connection address and phone digits are keyed hashes, so raw values never reach the attempt log.
+    const sourceHash = await hmacHex(secret, `sokoflow-checkout:${ip}`);
+    const digits = (data.customer.phone.match(/\d/g) ?? []).join("");
+    const phoneHash = digits.length >= 7 ? await hmacHex(secret, `sokoflow-phone:${digits}`) : "";
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: body, error } = await supabaseAdmin.rpc("guarded_checkout", {
       p_source_hash: sourceHash,
       p_slug: data.slug,
-      p_customer: data.customer,
+      p_customer: { ...data.customer, phone_hash: phoneHash },
       p_items: data.items,
       p_idempotency_key: data.idempotencyKey,
     });
