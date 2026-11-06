@@ -7,11 +7,11 @@
 4. [ ] App: manual stock adjustments via `adjust_product_stock`; product form stock edits routed through it; no direct `products.stock` writes
 5. [ ] Scrub existing raw `phone_digits` in checkout_attempts
 6. [ ] Tests (temporary test business only, then delete everything):
-   - [ ] two concurrent stock changes on same product
-   - [ ] same order sent twice (idempotency)
-   - [ ] cancelling same order twice
-   - [ ] order over quantity limit
-   - [ ] third open order from one phone
+   - [x] two concurrent stock changes on same product
+   - [x] same order sent twice (idempotency)
+   - [x] cancelling same order twice
+   - [x] order over quantity limit
+   - [x] third open order from one phone
 7. [ ] Report: hosting provider + IP header; pass/fail per test; cleanup confirmed
 
 ## Constraints from user

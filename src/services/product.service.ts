@@ -64,7 +64,7 @@ export const productService = {
       p_product_id: product.id,
       p_change: change,
       p_reason: "adjustment",
-      p_note: note ?? null,
+      p_note: note ?? undefined,
     });
     if (error) throw new Error(error.message.replace(/^ERROR:\s*/i, "").trim() || "Could not update stock");
     return Number(data);
