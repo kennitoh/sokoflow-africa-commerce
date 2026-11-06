@@ -43,6 +43,13 @@
       "when": 1793865790885,
       "tag": "0005_public_order_safety_and_stock_function",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1794006759535,
+      "tag": "0006_checkout_quantity_cap_clear_message",
+      "breakpoints": true
     }
   ]
 }
