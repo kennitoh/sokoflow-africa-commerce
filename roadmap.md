@@ -1,5 +1,10 @@
 # Roadmap — Safety fixes: stock hold, safe stock-change function, checkout attempt log
 
+## Follow-up request — persistent jobs and stock-based public cap
+- [x] Register the hourly expiry and daily cleanup jobs in a migration
+- [x] Set public product quantity limit to the lower of 20 or current stock, with a clear error
+- [x] Verify current live scheduled jobs and configured checkout hash secret name
+
 ## Tasks
 1. [ ] Migration: enable pg_cron; `adjust_product_stock` (lock row, refuse <0, movement, atomic); products stock-write guard trigger; rewrite `guarded_checkout` (per-product public quantity cap, 2 open unpaid website orders per phone, failed-only 60/business limit, separate higher success limit); `expire_stale_public_orders` (calls cancel_order unchanged)
 2. [ ] Cron schedules: hourly expiry of 24h-old open unpaid website orders; daily purge of checkout attempts older than 1 day
