@@ -1,25 +1,9 @@
-# Roadmap — Safety fixes: stock hold, safe stock-change function, checkout attempt log
-
-## Follow-up request — persistent jobs and stock-based public cap
-- [x] Register the hourly expiry and daily cleanup jobs in a migration
-- [x] Set public product quantity limit to the lower of 20 or current stock, with a clear error
-- [x] Verify current live scheduled jobs and configured checkout hash secret name
+# Roadmap — Public checkout safety follow-up
 
 ## Tasks
-1. [ ] Migration: enable pg_cron; `adjust_product_stock` (lock row, refuse <0, movement, atomic); products stock-write guard trigger; rewrite `guarded_checkout` (per-product public quantity cap, 2 open unpaid website orders per phone, failed-only 60/business limit, separate higher success limit); `expire_stale_public_orders` (calls cancel_order unchanged)
-2. [ ] Cron schedules: hourly expiry of 24h-old open unpaid website orders; daily purge of checkout attempts older than 1 day
-3. [ ] Server fn: HMAC hashing of IP + phone digits with server-stored secret; refuse when no connection address
-4. [ ] App: manual stock adjustments via `adjust_product_stock`; product form stock edits routed through it; no direct `products.stock` writes
-5. [ ] Scrub existing raw `phone_digits` in checkout_attempts
-6. [ ] Tests (temporary test business only, then delete everything):
-   - [x] two concurrent stock changes on same product
-   - [x] same order sent twice (idempotency)
-   - [x] cancelling same order twice
-   - [x] order over quantity limit
-   - [x] third open order from one phone
-7. [ ] Report: hosting provider + IP header; pass/fail per test; cleanup confirmed
+- [x] Register hourly stale-order expiry and daily attempt-log cleanup in a migration
+- [x] Cap each public order line at the lower of 20 units or current stock; preserve a clear error
+- [x] Verify current live scheduled jobs and confirm `CHECKOUT_HASH_SECRET` is configured
 
-## Constraints from user
-- Do not change how cancel_order works
-- Do not touch live stock/orders; test only on temporary test business, delete everything after
-- Scheduled jobs must be confirmed available (pg_cron is available → enabling it)
+## Constraints
+- Do not touch live order or stock data
