@@ -13,3 +13,4 @@
 - Guest checkout goes only through the SECURITY DEFINER public_checkout RPC (owner resolved from slug, DB prices, idempotency key per owner); confirmation via unguessable orders.public_token. Never grant anon create_order/cancel_order — keeps owner RPCs private.
 
 - Guest checkout runs only through the server, which calls guarded_checkout (service role only) to apply abuse limits before public_checkout; never re-grant anon execute on either — keeps limits unbypassable.
+- Required scheduled jobs are registered idempotently in project migrations so database rebuilds restore them.

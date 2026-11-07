@@ -50,6 +50,13 @@
       "when": 1794006759535,
       "tag": "0006_checkout_quantity_cap_clear_message",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1794083976417,
+      "tag": "0007_persist_public_checkout_safety_jobs_and_quantity_cap",
+      "breakpoints": true
     }
   ]
 }
