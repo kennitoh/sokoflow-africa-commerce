@@ -57,6 +57,13 @@
       "when": 1794083976417,
       "tag": "0007_persist_public_checkout_safety_jobs_and_quantity_cap",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1794218107471,
+      "tag": "0008_customer_debt_repayment_ledger",
+      "breakpoints": true
     }
   ]
 }

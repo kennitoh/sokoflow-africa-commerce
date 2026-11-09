@@ -224,6 +224,111 @@ export type Database = {
         }
         Relationships: []
       }
+      customer_opening_balances: {
+        Row: {
+          amount: number
+          balance_date: string
+          created_at: string
+          customer_id: string
+          id: string
+          idempotency_key: string
+          note: string | null
+          recorded_by: string
+          status: string
+          user_id: string
+          voided_at: string | null
+          voided_reason: string | null
+        }
+        Insert: {
+          amount: number
+          balance_date: string
+          created_at?: string
+          customer_id: string
+          id?: string
+          idempotency_key: string
+          note?: string | null
+          recorded_by: string
+          status?: string
+          user_id: string
+          voided_at?: string | null
+          voided_reason?: string | null
+        }
+        Update: {
+          amount?: number
+          balance_date?: string
+          created_at?: string
+          customer_id?: string
+          id?: string
+          idempotency_key?: string
+          note?: string | null
+          recorded_by?: string
+          status?: string
+          user_id?: string
+          voided_at?: string | null
+          voided_reason?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_opening_balances_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      customer_payment_allocations: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          opening_balance_id: string | null
+          order_id: string | null
+          payment_id: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          id?: string
+          opening_balance_id?: string | null
+          order_id?: string | null
+          payment_id: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          opening_balance_id?: string | null
+          order_id?: string | null
+          payment_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_payment_allocations_opening_balance_id_fkey"
+            columns: ["opening_balance_id"]
+            isOneToOne: false
+            referencedRelation: "customer_opening_balances"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_payment_allocations_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_payment_allocations_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "payments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       customers: {
         Row: {
           address: string | null
@@ -427,6 +532,78 @@ export type Database = {
             columns: ["customer_id"]
             isOneToOne: false
             referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payments: {
+        Row: {
+          amount: number
+          created_at: string
+          customer_id: string | null
+          id: string
+          idempotency_key: string
+          kind: string
+          method: string
+          migrated: boolean
+          mpesa_reference: string | null
+          note: string | null
+          order_id: string | null
+          recorded_by: string
+          status: string
+          user_id: string
+          voided_at: string | null
+          voided_reason: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          customer_id?: string | null
+          id?: string
+          idempotency_key: string
+          kind: string
+          method: string
+          migrated?: boolean
+          mpesa_reference?: string | null
+          note?: string | null
+          order_id?: string | null
+          recorded_by: string
+          status?: string
+          user_id: string
+          voided_at?: string | null
+          voided_reason?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          customer_id?: string | null
+          id?: string
+          idempotency_key?: string
+          kind?: string
+          method?: string
+          migrated?: boolean
+          mpesa_reference?: string | null
+          note?: string | null
+          order_id?: string | null
+          recorded_by?: string
+          status?: string
+          user_id?: string
+          voided_at?: string | null
+          voided_reason?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
             referencedColumns: ["id"]
           },
         ]
@@ -888,6 +1065,18 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      customer_debt_balances: {
+        Args: never
+        Returns: {
+          account_credit: number
+          balance_owed: number
+          customer_id: string
+          customer_name: string
+          oldest_unpaid_at: string
+          total_credit_given: number
+          total_repaid: number
+        }[]
+      }
       derive_payment_status: {
         Args: { p_amount_paid: number; p_total: number }
         Returns: Database["public"]["Enums"]["payment_status"]
@@ -915,9 +1104,60 @@ export type Database = {
       }
       public_order_confirmation: { Args: { p_token: string }; Returns: Json }
       public_storefront: { Args: { p_slug: string }; Returns: Json }
+      record_customer_opening_balance: {
+        Args: {
+          p_amount: number
+          p_balance_date: string
+          p_customer_id: string
+          p_idempotency_key: string
+          p_note: string
+        }
+        Returns: Json
+      }
+      record_customer_payment: {
+        Args: {
+          p_amount: number
+          p_customer_id: string
+          p_idempotency_key: string
+          p_method: string
+          p_note: string
+          p_reference: string
+        }
+        Returns: Json
+      }
+      record_order_payment: {
+        Args: {
+          p_amount: number
+          p_idempotency_key: string
+          p_method: string
+          p_note: string
+          p_order_id: string
+          p_reference: string
+        }
+        Returns: Json
+      }
+      record_order_refund: {
+        Args: {
+          p_amount: number
+          p_idempotency_key: string
+          p_method: string
+          p_note: string
+          p_order_id: string
+          p_reference: string
+        }
+        Returns: Json
+      }
       storefront_image_visible: {
         Args: { p_bucket: string; p_name: string }
         Returns: boolean
+      }
+      void_customer_opening_balance: {
+        Args: { p_opening_balance_id: string; p_reason: string }
+        Returns: Json
+      }
+      void_customer_payment: {
+        Args: { p_payment_id: string; p_reason: string }
+        Returns: Json
       }
     }
     Enums: {
